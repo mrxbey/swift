@@ -52,18 +52,14 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
         }
 
         // Cache-first: Try to get from cache
-        let cached = try await MainActor.run {
-            try cacheService.fetchOccurrences(userId: userId, date: date)
-        }
+        let cached = try cacheService.fetchOccurrences(userId: userId, date: date)
 
         if !cached.isEmpty {
             // If online, sync first to ensure fresh data
             if await networkMonitor.isConnected() {
                 try? await syncEngine.performFullSync(userId: userId)
                 // Return fresh data from cache after sync
-                return try await MainActor.run {
-                    try cacheService.fetchOccurrences(userId: userId, date: date)
-                }
+                return                     try cacheService.fetchOccurrences(userId: userId, date: date)
             }
             // Offline: return cached data
             return cached
@@ -85,10 +81,8 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
             let occurrences = response.map(\.toDomain)
 
             // Cache the results
-            try await MainActor.run {
-                for occurrence in occurrences {
-                    try cacheService.saveOccurrence(occurrence, syncState: .synced)
-                }
+            for occurrence in occurrences {
+                try cacheService.saveOccurrence(occurrence, syncState: .synced)
             }
 
             return occurrences
@@ -123,10 +117,8 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
             let occurrences = response.map(\.toDomain)
 
             // Cache the results
-            try await MainActor.run {
-                for occurrence in occurrences {
-                    try cacheService.saveOccurrence(occurrence, syncState: .synced)
-                }
+            for occurrence in occurrences {
+                try cacheService.saveOccurrence(occurrence, syncState: .synced)
             }
 
             return occurrences
@@ -143,9 +135,7 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
         }
 
         // Cache-first: Try to get from cache
-        if let cached = try await MainActor.run(body: {
-            try cacheService.fetchOccurrence(id: id)
-        }) {
+        if let cached = try cacheService.fetchOccurrence(id: id) {
             // Trigger background sync
             Task {
                 if await networkMonitor.isConnected() {
@@ -169,9 +159,7 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
             let occurrence = response.toDomain
 
             // Cache the result
-            try await MainActor.run {
-                try cacheService.saveOccurrence(occurrence, syncState: .synced)
-            }
+                            try cacheService.saveOccurrence(occurrence, syncState: .synced)
 
             return occurrence
         } catch let error as PostgrestError {
@@ -213,9 +201,7 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
         }
 
         // Save to cache with pending state
-        try await MainActor.run {
-            try cacheService.saveOccurrence(occurrenceToCreate, syncState: .pending)
-        }
+                    try cacheService.saveOccurrence(occurrenceToCreate, syncState: .pending)
 
         // Try to sync to Supabase if online
         if await networkMonitor.isConnected() {
@@ -233,9 +219,7 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
                 let created = response.toDomain
 
                 // Update cache with synced state
-                try await MainActor.run {
-                    try cacheService.saveOccurrence(created, syncState: .synced)
-                }
+                                    try cacheService.saveOccurrence(created, syncState: .synced)
 
                 return created
             } catch let error as PostgrestError {
@@ -258,9 +242,7 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
         updatedOccurrence.updatedAt = Date()
 
         // Save to cache with pending state
-        try await MainActor.run {
-            try cacheService.saveOccurrence(updatedOccurrence, syncState: .pending)
-        }
+                    try cacheService.saveOccurrence(updatedOccurrence, syncState: .pending)
 
         // Try to sync to Supabase if online
         if await networkMonitor.isConnected() {
@@ -275,9 +257,7 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
                     .execute()
 
                 // Update cache with synced state
-                try await MainActor.run {
-                    try cacheService.saveOccurrence(updatedOccurrence, syncState: .synced)
-                }
+                                    try cacheService.saveOccurrence(updatedOccurrence, syncState: .synced)
             } catch let error as PostgrestError {
                 throw SupabaseError.from(error)
             } catch {
@@ -303,9 +283,7 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
 
             // Update cache with latest state
             if let updated = try? await fetchOccurrenceFromSupabase(id, userId: userId) {
-                try await MainActor.run {
-                    try cacheService.saveOccurrence(updated, syncState: .synced)
-                }
+                                    try cacheService.saveOccurrence(updated, syncState: .synced)
             }
         } catch let error as PostgrestError {
             throw SupabaseError.from(error)
@@ -336,9 +314,7 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
 
             // Update cache with latest state
             if let updated = try? await fetchOccurrenceFromSupabase(id, userId: userId) {
-                try await MainActor.run {
-                    try cacheService.saveOccurrence(updated, syncState: .synced)
-                }
+                                    try cacheService.saveOccurrence(updated, syncState: .synced)
             }
         } catch let error as PostgrestError {
             throw SupabaseError.from(error)
@@ -364,9 +340,7 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
 
             // Update cache with latest state
             if let updated = try? await fetchOccurrenceFromSupabase(id, userId: userId) {
-                try await MainActor.run {
-                    try cacheService.saveOccurrence(updated, syncState: .synced)
-                }
+                                    try cacheService.saveOccurrence(updated, syncState: .synced)
             }
         } catch let error as PostgrestError {
             throw SupabaseError.from(error)
@@ -397,9 +371,7 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
             let occurrence = response.toDomain
 
             // Update cache
-            try await MainActor.run {
-                try cacheService.saveOccurrence(occurrence, syncState: .synced)
-            }
+                            try cacheService.saveOccurrence(occurrence, syncState: .synced)
 
             return occurrence
         } catch let error as PostgrestError {

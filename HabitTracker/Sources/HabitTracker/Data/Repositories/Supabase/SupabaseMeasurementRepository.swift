@@ -47,18 +47,14 @@ public actor SupabaseMeasurementRepository: MeasurementRepository {
         }
 
         // Cache-first: Try to get from cache
-        let cached = try await MainActor.run {
-            try cacheService.fetchMeasurements(goalId: goalId)
-        }
+        let cached = try cacheService.fetchMeasurements(goalId: goalId)
 
         if !cached.isEmpty {
             // If online, sync first to ensure fresh data
             if await networkMonitor.isConnected() {
                 try? await syncEngine.performFullSync(userId: userId)
                 // Return fresh data from cache after sync
-                return try await MainActor.run {
-                    try cacheService.fetchMeasurements(goalId: goalId)
-                }
+                return                     try cacheService.fetchMeasurements(goalId: goalId)
             }
             // Offline: return cached data
             return cached
@@ -78,10 +74,8 @@ public actor SupabaseMeasurementRepository: MeasurementRepository {
             let measurements = response.map(\.toDomain)
 
             // Cache the results
-            try await MainActor.run {
-                for measurement in measurements {
-                    try cacheService.saveMeasurement(measurement, syncState: .synced)
-                }
+            for measurement in measurements {
+                try cacheService.saveMeasurement(measurement, syncState: .synced)
             }
 
             return measurements
@@ -113,10 +107,8 @@ public actor SupabaseMeasurementRepository: MeasurementRepository {
             let measurements = response.map(\.toDomain)
 
             // Cache the results
-            try await MainActor.run {
-                for measurement in measurements {
-                    try cacheService.saveMeasurement(measurement, syncState: .synced)
-                }
+            for measurement in measurements {
+                try cacheService.saveMeasurement(measurement, syncState: .synced)
             }
 
             return measurements
@@ -133,9 +125,7 @@ public actor SupabaseMeasurementRepository: MeasurementRepository {
         }
 
         // Try cache first
-        if let cached = try? await MainActor.run(body: {
-            try cacheService.fetchMeasurement(id: id)
-        }) {
+        if let cached = try? cacheService.fetchMeasurement(id: id) {
             return cached
         }
 
@@ -153,9 +143,7 @@ public actor SupabaseMeasurementRepository: MeasurementRepository {
             let measurement = response.toDomain
 
             // Cache the result
-            try await MainActor.run {
-                try cacheService.saveMeasurement(measurement, syncState: .synced)
-            }
+                            try cacheService.saveMeasurement(measurement, syncState: .synced)
 
             return measurement
         } catch let error as PostgrestError {
@@ -189,9 +177,7 @@ public actor SupabaseMeasurementRepository: MeasurementRepository {
         }
 
         // Save to cache with pending state
-        try await MainActor.run {
-            try cacheService.saveMeasurement(measurementToCreate, syncState: .pending)
-        }
+                    try cacheService.saveMeasurement(measurementToCreate, syncState: .pending)
 
         // Try to sync to Supabase if online
         if await networkMonitor.isConnected() {
@@ -209,9 +195,7 @@ public actor SupabaseMeasurementRepository: MeasurementRepository {
                 let created = response.toDomain
 
                 // Update cache with synced state
-                try await MainActor.run {
-                    try cacheService.saveMeasurement(created, syncState: .synced)
-                }
+                                    try cacheService.saveMeasurement(created, syncState: .synced)
 
                 return created
             } catch let error as PostgrestError {
@@ -234,9 +218,7 @@ public actor SupabaseMeasurementRepository: MeasurementRepository {
         updatedMeasurement.updatedAt = Date()
 
         // Save to cache with pending state
-        try await MainActor.run {
-            try cacheService.saveMeasurement(updatedMeasurement, syncState: .pending)
-        }
+                    try cacheService.saveMeasurement(updatedMeasurement, syncState: .pending)
 
         // Try to sync to Supabase if online
         if await networkMonitor.isConnected() {
@@ -251,9 +233,7 @@ public actor SupabaseMeasurementRepository: MeasurementRepository {
                     .execute()
 
                 // Update cache with synced state
-                try await MainActor.run {
-                    try cacheService.saveMeasurement(updatedMeasurement, syncState: .synced)
-                }
+                                    try cacheService.saveMeasurement(updatedMeasurement, syncState: .synced)
             } catch let error as PostgrestError {
                 throw SupabaseError.from(error)
             } catch {
@@ -269,9 +249,7 @@ public actor SupabaseMeasurementRepository: MeasurementRepository {
         }
 
         // Delete from cache
-        try await MainActor.run {
-            try cacheService.deleteMeasurement(id: id)
-        }
+                    try cacheService.deleteMeasurement(id: id)
 
         // Try to sync deletion to Supabase if online
         if await networkMonitor.isConnected() {
@@ -323,9 +301,7 @@ public actor SupabaseMeasurementRepository: MeasurementRepository {
             let measurement = response.toDomain
 
             // Update cache
-            try await MainActor.run {
-                try cacheService.saveMeasurement(measurement, syncState: .synced)
-            }
+                            try cacheService.saveMeasurement(measurement, syncState: .synced)
 
             return measurement
         } catch let error as PostgrestError {

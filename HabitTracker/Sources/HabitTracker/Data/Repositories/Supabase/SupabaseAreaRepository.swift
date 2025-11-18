@@ -91,9 +91,7 @@ public actor SupabaseAreaRepository: AreaRepository {
         }
 
         // Cache-first: Try to get from cache
-        if let cached = try await MainActor.run(body: {
-            try cacheService.fetchArea(id: id)
-        }) {
+        if let cached = try cacheService.fetchArea(id: id) {
             // Trigger background sync to refresh
             Task {
                 if await networkMonitor.isConnected() {
@@ -117,9 +115,7 @@ public actor SupabaseAreaRepository: AreaRepository {
             let area = response.toDomain
 
             // Cache the result
-            try await MainActor.run {
-                try cacheService.saveArea(area, syncState: .synced)
-            }
+            try cacheService.saveArea(area, syncState: .synced)
 
             return area
         } catch let error as PostgrestError {
@@ -153,9 +149,7 @@ public actor SupabaseAreaRepository: AreaRepository {
         }
 
         // Save to cache first with pending state
-        try await MainActor.run {
-            try cacheService.saveArea(areaToCreate, syncState: .pending)
-        }
+        try cacheService.saveArea(areaToCreate, syncState: .pending)
 
         // Try to sync to Supabase if online
         if await networkMonitor.isConnected() {
@@ -173,9 +167,7 @@ public actor SupabaseAreaRepository: AreaRepository {
                 let created = response.toDomain
 
                 // Update cache with synced state
-                try await MainActor.run {
-                    try cacheService.saveArea(created, syncState: .synced)
-                }
+                try cacheService.saveArea(created, syncState: .synced)
 
                 return created
             } catch let error as PostgrestError {
@@ -203,9 +195,7 @@ public actor SupabaseAreaRepository: AreaRepository {
         updatedArea.updatedAt = Date()
 
         // Save to cache first with pending state
-        try await MainActor.run {
-            try cacheService.saveArea(updatedArea, syncState: .pending)
-        }
+        try cacheService.saveArea(updatedArea, syncState: .pending)
 
         // Try to sync to Supabase if online
         if await networkMonitor.isConnected() {
@@ -220,9 +210,7 @@ public actor SupabaseAreaRepository: AreaRepository {
                     .execute()
 
                 // Update cache with synced state
-                try await MainActor.run {
-                    try cacheService.saveArea(updatedArea, syncState: .synced)
-                }
+                try cacheService.saveArea(updatedArea, syncState: .synced)
             } catch let error as PostgrestError {
                 if let message = error.message,
                    message.contains("duplicate") || message.contains("unique") {
@@ -242,9 +230,7 @@ public actor SupabaseAreaRepository: AreaRepository {
         }
 
         // Delete from cache
-        try await MainActor.run {
-            try cacheService.deleteArea(id: id)
-        }
+        try cacheService.deleteArea(id: id)
 
         // Try to sync deletion to Supabase if online
         if await networkMonitor.isConnected() {
@@ -270,9 +256,7 @@ public actor SupabaseAreaRepository: AreaRepository {
         }
 
         // Fetch area from cache, update status, and save
-        guard let area = try await MainActor.run(body: {
-            try cacheService.fetchArea(id: id)
-        }) else {
+        guard let area = try cacheService.fetchArea(id: id) else {
             throw SupabaseError.notFound
         }
 
@@ -281,9 +265,7 @@ public actor SupabaseAreaRepository: AreaRepository {
         archivedArea.updatedAt = Date()
 
         // Save to cache with pending state
-        try await MainActor.run {
-            try cacheService.saveArea(archivedArea, syncState: .pending)
-        }
+        try cacheService.saveArea(archivedArea, syncState: .pending)
 
         // Try to sync to Supabase if online
         if await networkMonitor.isConnected() {
@@ -296,9 +278,7 @@ public actor SupabaseAreaRepository: AreaRepository {
                     .execute()
 
                 // Update cache with synced state
-                try await MainActor.run {
-                    try cacheService.saveArea(archivedArea, syncState: .synced)
-                }
+                try cacheService.saveArea(archivedArea, syncState: .synced)
             } catch let error as PostgrestError {
                 throw SupabaseError.from(error)
             } catch {

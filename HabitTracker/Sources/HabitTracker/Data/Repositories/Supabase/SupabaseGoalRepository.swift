@@ -47,18 +47,14 @@ public actor SupabaseGoalRepository: GoalRepository {
         }
 
         // Cache-first: Try to get from cache
-        let cached = try await MainActor.run {
-            try cacheService.fetchGoals(userId: userId).filter { $0.status == .active }
-        }
+        let cached = try cacheService.fetchGoals(userId: userId).filter { $0.status == .active }
 
         if !cached.isEmpty {
             // If online, sync first to ensure fresh data
             if await networkMonitor.isConnected() {
                 try? await syncEngine.performFullSync(userId: userId)
                 // Return fresh data from cache after sync
-                return try await MainActor.run {
-                    try cacheService.fetchGoals(userId: userId).filter { $0.status == .active }
-                }
+                return                     try cacheService.fetchGoals(userId: userId).filter { $0.status == .active }
             }
             // Offline: return cached data
             return cached
@@ -78,10 +74,8 @@ public actor SupabaseGoalRepository: GoalRepository {
             let goals = response.map(\.toDomain)
 
             // Cache the results
-            try await MainActor.run {
-                for goal in goals {
-                    try cacheService.saveGoal(goal, syncState: .synced)
-                }
+            for goal in goals {
+                try cacheService.saveGoal(goal, syncState: .synced)
             }
 
             return goals
@@ -98,18 +92,14 @@ public actor SupabaseGoalRepository: GoalRepository {
         }
 
         // Cache-first: Try to get from cache
-        let cached = try await MainActor.run {
-            try cacheService.fetchGoals(areaId: areaId).filter { $0.status == .active }
-        }
+        let cached = try cacheService.fetchGoals(areaId: areaId).filter { $0.status == .active }
 
         if !cached.isEmpty {
             // If online, sync first to ensure fresh data
             if await networkMonitor.isConnected() {
                 try? await syncEngine.performFullSync(userId: userId)
                 // Return fresh data from cache after sync
-                return try await MainActor.run {
-                    try cacheService.fetchGoals(areaId: areaId).filter { $0.status == .active }
-                }
+                return                     try cacheService.fetchGoals(areaId: areaId).filter { $0.status == .active }
             }
             // Offline: return cached data
             return cached
@@ -130,10 +120,8 @@ public actor SupabaseGoalRepository: GoalRepository {
             let goals = response.map(\.toDomain)
 
             // Cache the results
-            try await MainActor.run {
-                for goal in goals {
-                    try cacheService.saveGoal(goal, syncState: .synced)
-                }
+            for goal in goals {
+                try cacheService.saveGoal(goal, syncState: .synced)
             }
 
             return goals
@@ -150,9 +138,7 @@ public actor SupabaseGoalRepository: GoalRepository {
         }
 
         // Cache-first: Try to get from cache
-        if let cached = try await MainActor.run(body: {
-            try cacheService.fetchGoal(id: id)
-        }) {
+        if let cached = try cacheService.fetchGoal(id: id) {
             // Trigger background sync
             Task {
                 if await networkMonitor.isConnected() {
@@ -176,9 +162,7 @@ public actor SupabaseGoalRepository: GoalRepository {
             let goal = response.toDomain
 
             // Cache the result
-            try await MainActor.run {
-                try cacheService.saveGoal(goal, syncState: .synced)
-            }
+                            try cacheService.saveGoal(goal, syncState: .synced)
 
             return goal
         } catch let error as PostgrestError {
@@ -217,9 +201,7 @@ public actor SupabaseGoalRepository: GoalRepository {
         }
 
         // Save to cache first with pending state
-        try await MainActor.run {
-            try cacheService.saveGoal(goalToCreate, syncState: .pending)
-        }
+                    try cacheService.saveGoal(goalToCreate, syncState: .pending)
 
         // Try to sync to Supabase if online
         if await networkMonitor.isConnected() {
@@ -237,9 +219,7 @@ public actor SupabaseGoalRepository: GoalRepository {
                 let created = response.toDomain
 
                 // Update cache with synced state
-                try await MainActor.run {
-                    try cacheService.saveGoal(created, syncState: .synced)
-                }
+                                    try cacheService.saveGoal(created, syncState: .synced)
 
                 return created
             } catch let error as PostgrestError {
@@ -262,9 +242,7 @@ public actor SupabaseGoalRepository: GoalRepository {
         updatedGoal.updatedAt = Date()
 
         // Save to cache with pending state
-        try await MainActor.run {
-            try cacheService.saveGoal(updatedGoal, syncState: .pending)
-        }
+                    try cacheService.saveGoal(updatedGoal, syncState: .pending)
 
         // Try to sync to Supabase if online
         if await networkMonitor.isConnected() {
@@ -279,9 +257,7 @@ public actor SupabaseGoalRepository: GoalRepository {
                     .execute()
 
                 // Update cache with synced state
-                try await MainActor.run {
-                    try cacheService.saveGoal(updatedGoal, syncState: .synced)
-                }
+                                    try cacheService.saveGoal(updatedGoal, syncState: .synced)
             } catch let error as PostgrestError {
                 throw SupabaseError.from(error)
             } catch {
@@ -297,9 +273,7 @@ public actor SupabaseGoalRepository: GoalRepository {
         }
 
         // Delete from cache
-        try await MainActor.run {
-            try cacheService.deleteGoal(id: id)
-        }
+                    try cacheService.deleteGoal(id: id)
 
         // Try to sync deletion to Supabase if online
         if await networkMonitor.isConnected() {
@@ -325,9 +299,7 @@ public actor SupabaseGoalRepository: GoalRepository {
         }
 
         // Fetch goal from cache, update status, and save
-        guard let goal = try await MainActor.run(body: {
-            try cacheService.fetchGoal(id: id)
-        }) else {
+        guard let goal = try cacheService.fetchGoal(id: id) else {
             throw SupabaseError.notFound
         }
 
@@ -336,9 +308,7 @@ public actor SupabaseGoalRepository: GoalRepository {
         archivedGoal.updatedAt = Date()
 
         // Save to cache with pending state
-        try await MainActor.run {
-            try cacheService.saveGoal(archivedGoal, syncState: .pending)
-        }
+                    try cacheService.saveGoal(archivedGoal, syncState: .pending)
 
         // Try to sync to Supabase if online
         if await networkMonitor.isConnected() {
@@ -351,9 +321,7 @@ public actor SupabaseGoalRepository: GoalRepository {
                     .execute()
 
                 // Update cache with synced state
-                try await MainActor.run {
-                    try cacheService.saveGoal(archivedGoal, syncState: .synced)
-                }
+                                    try cacheService.saveGoal(archivedGoal, syncState: .synced)
             } catch let error as PostgrestError {
                 throw SupabaseError.from(error)
             } catch {
@@ -369,9 +337,7 @@ public actor SupabaseGoalRepository: GoalRepository {
         }
 
         // Fetch goal from cache, update status, and save
-        guard let goal = try await MainActor.run(body: {
-            try cacheService.fetchGoal(id: id)
-        }) else {
+        guard let goal = try cacheService.fetchGoal(id: id) else {
             throw SupabaseError.notFound
         }
 
@@ -380,9 +346,7 @@ public actor SupabaseGoalRepository: GoalRepository {
         completedGoal.updatedAt = Date()
 
         // Save to cache with pending state
-        try await MainActor.run {
-            try cacheService.saveGoal(completedGoal, syncState: .pending)
-        }
+                    try cacheService.saveGoal(completedGoal, syncState: .pending)
 
         // Try to sync to Supabase if online
         if await networkMonitor.isConnected() {
@@ -395,9 +359,7 @@ public actor SupabaseGoalRepository: GoalRepository {
                     .execute()
 
                 // Update cache with synced state
-                try await MainActor.run {
-                    try cacheService.saveGoal(completedGoal, syncState: .synced)
-                }
+                                    try cacheService.saveGoal(completedGoal, syncState: .synced)
             } catch let error as PostgrestError {
                 throw SupabaseError.from(error)
             } catch {
