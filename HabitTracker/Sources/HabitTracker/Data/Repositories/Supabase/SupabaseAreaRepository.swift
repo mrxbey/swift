@@ -47,18 +47,16 @@ public actor SupabaseAreaRepository: AreaRepository {
         }
 
         // Cache-first: Try to get from cache
-        let cached = try await MainActor.run {
-            try cacheService.fetchAreas(userId: userId)
-        }
+        let cached = try cacheService.fetchAreas(userId: userId)
 
         if !cached.isEmpty {
-            // Return cached data immediately
-            // Trigger background sync to refresh cache
-            Task {
-                if await networkMonitor.isConnected() {
-                    try? await syncEngine.performFullSync(userId: userId)
-                }
+            // If online, sync first to ensure fresh data
+            if await networkMonitor.isConnected() {
+                try? await syncEngine.performFullSync(userId: userId)
+                // Return fresh data from cache after sync
+                return try cacheService.fetchAreas(userId: userId)
             }
+            // Offline: return cached data
             return cached
         }
 
@@ -75,10 +73,8 @@ public actor SupabaseAreaRepository: AreaRepository {
             let areas = response.map(\.toDomain)
 
             // Cache the results
-            try await MainActor.run {
-                for area in areas {
-                    try cacheService.saveArea(area, syncState: .synced)
-                }
+            for area in areas {
+                try cacheService.saveArea(area, syncState: .synced)
             }
 
             return areas

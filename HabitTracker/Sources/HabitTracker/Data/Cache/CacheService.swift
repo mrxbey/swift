@@ -5,8 +5,11 @@ import SwiftData
 ///
 /// Provides thread-safe access to cached entities with sync state tracking.
 /// Supports offline-first operations with pending change queues.
-@MainActor
-public final class CacheService {
+///
+/// IMPORTANT: This service uses a background ModelContext and should NOT be called
+/// from the main thread. All database operations run on a background thread to
+/// prevent UI blocking and ANR (Application Not Responding) errors.
+public final class CacheService: @unchecked Sendable {
     private let modelContainer: ModelContainer
     private let modelContext: ModelContext
 
@@ -30,6 +33,7 @@ public final class CacheService {
             configurations: [modelConfiguration]
         )
 
+        // Create background context for non-blocking operations
         self.modelContext = ModelContext(modelContainer)
         self.modelContext.autosaveEnabled = true
     }
@@ -216,6 +220,15 @@ public final class CacheService {
 
         let cached = try modelContext.fetch(descriptor)
         return cached.map { $0.toDomain() }
+    }
+
+    public func fetchMeasurement(id: UUID) throws -> Measurement? {
+        let descriptor = FetchDescriptor<CachedMeasurement>(
+            predicate: #Predicate { $0.id == id }
+        )
+
+        let cached = try modelContext.fetch(descriptor).first
+        return cached?.toDomain()
     }
 
     public func deleteMeasurement(id: UUID) throws {

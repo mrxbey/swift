@@ -52,12 +52,15 @@ public actor SupabaseGoalRepository: GoalRepository {
         }
 
         if !cached.isEmpty {
-            // Trigger background sync
-            Task {
-                if await networkMonitor.isConnected() {
-                    try? await syncEngine.performFullSync(userId: userId)
+            // If online, sync first to ensure fresh data
+            if await networkMonitor.isConnected() {
+                try? await syncEngine.performFullSync(userId: userId)
+                // Return fresh data from cache after sync
+                return try await MainActor.run {
+                    try cacheService.fetchGoals(userId: userId).filter { $0.status == .active }
                 }
             }
+            // Offline: return cached data
             return cached
         }
 
@@ -100,12 +103,15 @@ public actor SupabaseGoalRepository: GoalRepository {
         }
 
         if !cached.isEmpty {
-            // Trigger background sync
-            Task {
-                if await networkMonitor.isConnected() {
-                    try? await syncEngine.performFullSync(userId: userId)
+            // If online, sync first to ensure fresh data
+            if await networkMonitor.isConnected() {
+                try? await syncEngine.performFullSync(userId: userId)
+                // Return fresh data from cache after sync
+                return try await MainActor.run {
+                    try cacheService.fetchGoals(areaId: areaId).filter { $0.status == .active }
                 }
             }
+            // Offline: return cached data
             return cached
         }
 

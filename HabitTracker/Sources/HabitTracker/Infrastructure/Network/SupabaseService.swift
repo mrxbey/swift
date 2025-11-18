@@ -43,7 +43,7 @@ public actor SupabaseService: Sendable {
                 auth: .init(
                     autoRefreshToken: true,
                     persistSession: true,
-                    storage: UserDefaults.standard,
+                    storage: SupabaseKeychainStorage(),
                     flowType: .pkce
                 ),
                 global: .init(

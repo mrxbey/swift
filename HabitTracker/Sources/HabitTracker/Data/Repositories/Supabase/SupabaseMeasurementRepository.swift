@@ -52,12 +52,15 @@ public actor SupabaseMeasurementRepository: MeasurementRepository {
         }
 
         if !cached.isEmpty {
-            // Trigger background sync
-            Task {
-                if await networkMonitor.isConnected() {
-                    try? await syncEngine.performFullSync(userId: userId)
+            // If online, sync first to ensure fresh data
+            if await networkMonitor.isConnected() {
+                try? await syncEngine.performFullSync(userId: userId)
+                // Return fresh data from cache after sync
+                return try await MainActor.run {
+                    try cacheService.fetchMeasurements(goalId: goalId)
                 }
             }
+            // Offline: return cached data
             return cached
         }
 
@@ -129,12 +132,14 @@ public actor SupabaseMeasurementRepository: MeasurementRepository {
             throw SupabaseError.unauthorized
         }
 
-        // Cache-first: Try to get from cache
-        let cached = try await MainActor.run {
-            try cacheService.fetchMeasurements(goalId: id)  // Note: This queries by goalId, may need adjustment
+        // Try cache first
+        if let cached = try? await MainActor.run(body: {
+            try cacheService.fetchMeasurement(id: id)
+        }) {
+            return cached
         }
 
-        // For individual fetch, always go to Supabase since cache doesn't support ID lookups yet
+        // Cache miss: Fetch from Supabase
         do {
             let response: MeasurementDTO = try await client
                 .from("measurements")
@@ -315,7 +320,14 @@ public actor SupabaseMeasurementRepository: MeasurementRepository {
                 .execute()
                 .value
 
-            return response.toDomain
+            let measurement = response.toDomain
+
+            // Update cache
+            try await MainActor.run {
+                try cacheService.saveMeasurement(measurement, syncState: .synced)
+            }
+
+            return measurement
         } catch let error as PostgrestError {
             throw SupabaseError.from(error)
         } catch {

@@ -48,10 +48,14 @@ public actor AuthService {
     ///
     /// - Parameters:
     ///   - email: User's email address
-    ///   - password: User's password (minimum 6 characters)
+    ///   - password: User's password (minimum 8 characters with uppercase, lowercase, and digit)
     /// - Returns: The authenticated session
-    /// - Throws: AuthError if sign up fails
+    /// - Throws: AuthError if sign up fails or validation fails
     public func signUpWithEmail(email: String, password: String) async throws -> Session {
+        // Validate input before sending to server
+        try validateEmail(email)
+        try validatePassword(password)
+
         do {
             let response = try await client.auth.signUp(
                 email: email,
@@ -93,8 +97,11 @@ public actor AuthService {
     /// Sends a password reset email
     ///
     /// - Parameter email: User's email address
-    /// - Throws: AuthError if request fails
+    /// - Throws: AuthError if request fails or validation fails
     public func resetPassword(email: String) async throws {
+        // Validate email format
+        try validateEmail(email)
+
         do {
             try await client.auth.resetPasswordForEmail(email)
         } catch {
@@ -104,9 +111,12 @@ public actor AuthService {
 
     /// Updates the user's password
     ///
-    /// - Parameter newPassword: The new password
-    /// - Throws: AuthError if update fails
+    /// - Parameter newPassword: The new password (minimum 8 characters with uppercase, lowercase, and digit)
+    /// - Throws: AuthError if update fails or validation fails
     public func updatePassword(newPassword: String) async throws {
+        // Validate password strength
+        try validatePassword(newPassword)
+
         do {
             try await client.auth.update(user: UserAttributes(password: newPassword))
         } catch {
@@ -171,6 +181,63 @@ public actor AuthService {
             return session
         } catch {
             throw AuthError.sessionRefreshFailed(error.localizedDescription)
+        }
+    }
+
+    /// MARK: - Input Validation
+
+    /// Validates email address format
+    ///
+    /// - Parameter email: Email address to validate
+    /// - Throws: AuthError.invalidEmail if email format is invalid
+    private func validateEmail(_ email: String) throws {
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedEmail.isEmpty else {
+            throw AuthError.invalidEmail("Email cannot be empty")
+        }
+
+        // RFC 5322 compliant email regex (simplified for common cases)
+        let emailRegex = "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,64}$"
+        let predicate = NSPredicate(format: "SELF MATCHES[c] %@", emailRegex)
+
+        guard predicate.evaluate(with: trimmedEmail) else {
+            throw AuthError.invalidEmail("Invalid email format")
+        }
+    }
+
+    /// Validates password strength
+    ///
+    /// Requirements:
+    /// - Minimum 8 characters
+    /// - At least one uppercase letter
+    /// - At least one lowercase letter
+    /// - At least one digit
+    ///
+    /// - Parameter password: Password to validate
+    /// - Throws: AuthError with specific validation failure
+    private func validatePassword(_ password: String) throws {
+        guard password.count >= 8 else {
+            throw AuthError.passwordTooShort("Password must be at least 8 characters")
+        }
+
+        guard password.rangeOfCharacter(from: .uppercaseLetters) != nil else {
+            throw AuthError.passwordNeedsUppercase("Password must contain at least one uppercase letter")
+        }
+
+        guard password.rangeOfCharacter(from: .lowercaseLetters) != nil else {
+            throw AuthError.passwordNeedsLowercase("Password must contain at least one lowercase letter")
+        }
+
+        guard password.rangeOfCharacter(from: .decimalDigits) != nil else {
+            throw AuthError.passwordNeedsNumber("Password must contain at least one number")
+        }
+
+        // Optional: Check for common weak passwords
+        let commonPasswords = ["password", "12345678", "qwerty123", "password1"]
+        let lowercasePassword = password.lowercased()
+        if commonPasswords.contains(lowercasePassword) {
+            throw AuthError.passwordTooWeak("This password is too common. Please choose a stronger password")
         }
     }
 
@@ -285,6 +352,14 @@ public enum AuthError: LocalizedError, Equatable, Sendable {
     case noUserSession
     case resendVerificationFailed(String)
 
+    // Input validation errors
+    case invalidEmail(String)
+    case passwordTooShort(String)
+    case passwordNeedsUppercase(String)
+    case passwordNeedsLowercase(String)
+    case passwordNeedsNumber(String)
+    case passwordTooWeak(String)
+
     public var errorDescription: String? {
         switch self {
         case .signUpFailed(let message):
@@ -309,6 +384,18 @@ public enum AuthError: LocalizedError, Equatable, Sendable {
             return "No active user session"
         case .resendVerificationFailed(let message):
             return "Resend verification failed: \(message)"
+        case .invalidEmail(let message):
+            return message
+        case .passwordTooShort(let message):
+            return message
+        case .passwordNeedsUppercase(let message):
+            return message
+        case .passwordNeedsLowercase(let message):
+            return message
+        case .passwordNeedsNumber(let message):
+            return message
+        case .passwordTooWeak(let message):
+            return message
         }
     }
 
@@ -336,6 +423,18 @@ public enum AuthError: LocalizedError, Equatable, Sendable {
             return "Sign in to continue"
         case .resendVerificationFailed:
             return "Wait a moment and try again"
+        case .invalidEmail:
+            return "Enter a valid email address (e.g., user@example.com)"
+        case .passwordTooShort:
+            return "Use at least 8 characters for your password"
+        case .passwordNeedsUppercase:
+            return "Include at least one uppercase letter (A-Z)"
+        case .passwordNeedsLowercase:
+            return "Include at least one lowercase letter (a-z)"
+        case .passwordNeedsNumber:
+            return "Include at least one number (0-9)"
+        case .passwordTooWeak:
+            return "Choose a more unique password"
         }
     }
 }

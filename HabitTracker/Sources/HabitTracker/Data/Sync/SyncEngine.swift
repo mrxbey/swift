@@ -16,6 +16,10 @@ public final class SyncEngine {
     private let userDefaults = UserDefaults.standard
     private let lastSyncKey = "com.habittracker.lastSync"
 
+    // Concurrent sync protection
+    private var isSyncing = false
+    private var syncTask: Task<Void, Error>?
+
     /// MARK: - Initialization
 
     public init(cacheService: CacheService, supabaseClient: SupabaseClient) {
@@ -37,17 +41,39 @@ public final class SyncEngine {
     /// 2. Downloads updates from server
     /// 3. Updates cache sync state
     ///
+    /// If a sync is already in progress, this will await the existing sync instead
+    /// of starting a new one, preventing duplicate syncs and race conditions.
+    ///
     /// - Parameter userId: The user ID to sync for
     /// - Throws: SyncError if sync fails
     public func performFullSync(userId: UUID) async throws {
-        // Upload pending changes first
-        try await uploadPendingChanges(userId: userId)
+        // If already syncing, await existing task
+        if let existing = syncTask {
+            return try await existing.value
+        }
 
-        // Download updates from server
-        try await downloadUpdates(userId: userId)
+        guard !isSyncing else {
+            throw SyncError.alreadySyncing
+        }
 
-        // Save sync timestamps
-        saveLastSyncTimestamps()
+        isSyncing = true
+        defer { isSyncing = false }
+
+        let task = Task {
+            defer { syncTask = nil }
+
+            // Upload pending changes first
+            try await uploadPendingChanges(userId: userId)
+
+            // Download updates from server
+            try await downloadUpdates(userId: userId)
+
+            // Save sync timestamps
+            saveLastSyncTimestamps()
+        }
+
+        syncTask = task
+        try await task.value
     }
 
     /// MARK: - Upload Pending Changes
@@ -303,6 +329,7 @@ public enum SyncError: LocalizedError {
     case uploadFailed(String)
     case downloadFailed(String)
     case conflictResolutionFailed(String)
+    case alreadySyncing
 
     public var errorDescription: String? {
         switch self {
@@ -312,6 +339,8 @@ public enum SyncError: LocalizedError {
             return "Download failed: \(message)"
         case .conflictResolutionFailed(let message):
             return "Conflict resolution failed: \(message)"
+        case .alreadySyncing:
+            return "Sync already in progress"
         }
     }
 }

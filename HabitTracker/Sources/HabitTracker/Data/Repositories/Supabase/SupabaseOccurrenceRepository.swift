@@ -57,12 +57,15 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
         }
 
         if !cached.isEmpty {
-            // Trigger background sync
-            Task {
-                if await networkMonitor.isConnected() {
-                    try? await syncEngine.performFullSync(userId: userId)
+            // If online, sync first to ensure fresh data
+            if await networkMonitor.isConnected() {
+                try? await syncEngine.performFullSync(userId: userId)
+                // Return fresh data from cache after sync
+                return try await MainActor.run {
+                    try cacheService.fetchOccurrences(userId: userId, date: date)
                 }
             }
+            // Offline: return cached data
             return cached
         }
 
@@ -297,6 +300,13 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
                     "p_user": userId.uuidString
                 ])
                 .execute()
+
+            // Update cache with latest state
+            if let updated = try? await fetchOccurrenceFromSupabase(id, userId: userId) {
+                try await MainActor.run {
+                    try cacheService.saveOccurrence(updated, syncState: .synced)
+                }
+            }
         } catch let error as PostgrestError {
             throw SupabaseError.from(error)
         } catch {
@@ -323,6 +333,13 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
             try await client
                 .rpc("skip_occurrence", params: params)
                 .execute()
+
+            // Update cache with latest state
+            if let updated = try? await fetchOccurrenceFromSupabase(id, userId: userId) {
+                try await MainActor.run {
+                    try cacheService.saveOccurrence(updated, syncState: .synced)
+                }
+            }
         } catch let error as PostgrestError {
             throw SupabaseError.from(error)
         } catch {
@@ -344,6 +361,13 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
                     "p_user": userId.uuidString
                 ])
                 .execute()
+
+            // Update cache with latest state
+            if let updated = try? await fetchOccurrenceFromSupabase(id, userId: userId) {
+                try await MainActor.run {
+                    try cacheService.saveOccurrence(updated, syncState: .synced)
+                }
+            }
         } catch let error as PostgrestError {
             throw SupabaseError.from(error)
         } catch {
@@ -370,12 +394,37 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
                 .execute()
                 .value
 
-            return response.toDomain
+            let occurrence = response.toDomain
+
+            // Update cache
+            try await MainActor.run {
+                try cacheService.saveOccurrence(occurrence, syncState: .synced)
+            }
+
+            return occurrence
         } catch let error as PostgrestError {
             throw SupabaseError.from(error)
         } catch {
             throw SupabaseError.from(error)
         }
+    }
+
+    /// MARK: - Private Helpers
+
+    /// Fetches an occurrence from Supabase by ID
+    ///
+    /// Used to refresh cache after RPC operations that modify data
+    private func fetchOccurrenceFromSupabase(_ id: UUID, userId: UUID) async throws -> GoalOccurrence {
+        let response: GoalOccurrenceDTO = try await client
+            .from("goal_occurrences")
+            .select()
+            .eq("id", value: id.uuidString)
+            .eq("user_id", value: userId.uuidString)
+            .single()
+            .execute()
+            .value
+
+        return response.toDomain
     }
 }
 

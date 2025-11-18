@@ -141,7 +141,7 @@ public final class GoalMeasureTarget: Identifiable, Codable, Sendable, Equatable
     /// Check if this target is currently active
     public var isActive: Bool {
         let now = Date()
-        return effectiveFrom <= now && (effectiveTo == nil || effectiveTo! > now)
+        return effectiveFrom <= now && (effectiveTo.map { $0 > now } ?? true)
     }
 
     /// MARK: - Equatable
