@@ -1,20 +1,38 @@
 import Foundation
 import Supabase
 
-/// Supabase implementation of OccurrenceRepository
+/// Supabase implementation of OccurrenceRepository with offline-first caching
 ///
 /// Thread-safe actor that handles all occurrence-related database operations.
+/// Implements cache-first reads and write-through pattern for offline support.
 public actor SupabaseOccurrenceRepository: OccurrenceRepository {
     private let client: SupabaseClient
+    private let cacheService: CacheService
+    private let networkMonitor: NetworkMonitor
+    private let syncEngine: SyncEngine
 
     // MARK: - Initialization
 
-    public init(client: SupabaseClient) {
+    public init(
+        client: SupabaseClient,
+        cacheService: CacheService,
+        networkMonitor: NetworkMonitor,
+        syncEngine: SyncEngine
+    ) {
         self.client = client
+        self.cacheService = cacheService
+        self.networkMonitor = networkMonitor
+        self.syncEngine = syncEngine
     }
 
-    public init() {
-        self.client = SupabaseService.shared.getClient()
+    public init() async {
+        self.client = await SupabaseService.shared.getClient()
+        self.cacheService = try! CacheService()
+        self.networkMonitor = NetworkMonitor()
+        self.syncEngine = SyncEngine(
+            cacheService: try! CacheService(),
+            supabaseClient: await SupabaseService.shared.getClient()
+        )
     }
 
     // MARK: - OccurrenceRepository Implementation
@@ -25,11 +43,27 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
     }
 
     public func fetchOccurrences(for date: Date) async throws -> [GoalOccurrence] {
-        do {
-            guard let userId = await client.auth.currentUser?.id else {
-                throw SupabaseError.unauthorized
-            }
+        guard let userId = await client.auth.currentUser?.id else {
+            throw SupabaseError.unauthorized
+        }
 
+        // Cache-first: Try to get from cache
+        let cached = try await MainActor.run {
+            try cacheService.fetchOccurrences(userId: userId, date: date)
+        }
+
+        if !cached.isEmpty {
+            // Trigger background sync
+            Task {
+                if await networkMonitor.isConnected() {
+                    try? await syncEngine.performFullSync(userId: userId)
+                }
+            }
+            return cached
+        }
+
+        // Cache miss: Fetch from Supabase
+        do {
             let dateString = date.toDateOnlyString()
 
             let response: [GoalOccurrenceDTO] = try await client
@@ -41,7 +75,16 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
                 .execute()
                 .value
 
-            return response.map(\.toDomain)
+            let occurrences = response.map(\.toDomain)
+
+            // Cache the results
+            try await MainActor.run {
+                for occurrence in occurrences {
+                    try cacheService.saveOccurrence(occurrence, syncState: .synced)
+                }
+            }
+
+            return occurrences
         } catch let error as PostgrestError {
             throw SupabaseError.from(error)
         } catch {
@@ -50,11 +93,13 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
     }
 
     public func fetchOccurrences(from: Date, to: Date) async throws -> [GoalOccurrence] {
-        do {
-            guard let userId = await client.auth.currentUser?.id else {
-                throw SupabaseError.unauthorized
-            }
+        guard let userId = await client.auth.currentUser?.id else {
+            throw SupabaseError.unauthorized
+        }
 
+        // For range queries, always fetch from Supabase and refresh cache
+        // This is because the cache doesn't have an efficient range query yet
+        do {
             let fromString = from.toDateOnlyString()
             let toString = to.toDateOnlyString()
 
@@ -68,7 +113,16 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
                 .execute()
                 .value
 
-            return response.map(\.toDomain)
+            let occurrences = response.map(\.toDomain)
+
+            // Cache the results
+            try await MainActor.run {
+                for occurrence in occurrences {
+                    try cacheService.saveOccurrence(occurrence, syncState: .synced)
+                }
+            }
+
+            return occurrences
         } catch let error as PostgrestError {
             throw SupabaseError.from(error)
         } catch {
@@ -77,11 +131,25 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
     }
 
     public func fetch(_ id: UUID) async throws -> GoalOccurrence {
-        do {
-            guard let userId = await client.auth.currentUser?.id else {
-                throw SupabaseError.unauthorized
-            }
+        guard let userId = await client.auth.currentUser?.id else {
+            throw SupabaseError.unauthorized
+        }
 
+        // Cache-first: Try to get from cache
+        if let cached = try await MainActor.run(body: {
+            try cacheService.fetchOccurrence(id: id)
+        }) {
+            // Trigger background sync
+            Task {
+                if await networkMonitor.isConnected() {
+                    try? await syncEngine.performFullSync(userId: userId)
+                }
+            }
+            return cached
+        }
+
+        // Cache miss: Fetch from Supabase
+        do {
             let response: GoalOccurrenceDTO = try await client
                 .from("goal_occurrences")
                 .select()
@@ -91,7 +159,14 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
                 .execute()
                 .value
 
-            return response.toDomain
+            let occurrence = response.toDomain
+
+            // Cache the result
+            try await MainActor.run {
+                try cacheService.saveOccurrence(occurrence, syncState: .synced)
+            }
+
+            return occurrence
         } catch let error as PostgrestError {
             if error.statusCode == 404 {
                 throw SupabaseError.notFound
@@ -103,70 +178,102 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
     }
 
     public func create(_ occurrence: GoalOccurrence) async throws -> GoalOccurrence {
-        do {
-            guard let userId = await client.auth.currentUser?.id else {
-                throw SupabaseError.unauthorized
-            }
-
-            var occurrenceToCreate = occurrence
-            if occurrenceToCreate.userId != userId {
-                occurrenceToCreate = GoalOccurrence(
-                    id: occurrence.id,
-                    userId: userId,
-                    goalId: occurrence.goalId,
-                    scheduleId: occurrence.scheduleId,
-                    scheduledDate: occurrence.scheduledDate,
-                    targetCount: occurrence.targetCount,
-                    completedCount: occurrence.completedCount,
-                    status: occurrence.status,
-                    renameOverride: occurrence.renameOverride,
-                    contentSnapshot: occurrence.contentSnapshot,
-                    lastCompletedAt: occurrence.lastCompletedAt,
-                    createdAt: occurrence.createdAt,
-                    updatedAt: Date()
-                )
-            }
-
-            let dto = GoalOccurrenceDTO(from: occurrenceToCreate)
-
-            let response: GoalOccurrenceDTO = try await client
-                .from("goal_occurrences")
-                .insert(dto)
-                .select()
-                .single()
-                .execute()
-                .value
-
-            return response.toDomain
-        } catch let error as PostgrestError {
-            throw SupabaseError.from(error)
-        } catch {
-            throw SupabaseError.from(error)
+        guard let userId = await client.auth.currentUser?.id else {
+            throw SupabaseError.unauthorized
         }
+
+        var occurrenceToCreate = occurrence
+        if occurrenceToCreate.userId != userId {
+            occurrenceToCreate = GoalOccurrence(
+                id: occurrence.id,
+                userId: userId,
+                goalId: occurrence.goalId,
+                scheduleId: occurrence.scheduleId,
+                scheduledDate: occurrence.scheduledDate,
+                targetCount: occurrence.targetCount,
+                completedCount: occurrence.completedCount,
+                status: occurrence.status,
+                renameOverride: occurrence.renameOverride,
+                contentSnapshot: occurrence.contentSnapshot,
+                lastCompletedAt: occurrence.lastCompletedAt,
+                createdAt: occurrence.createdAt,
+                updatedAt: Date()
+            )
+        }
+
+        // Save to cache with pending state
+        try await MainActor.run {
+            try cacheService.saveOccurrence(occurrenceToCreate, syncState: .pending)
+        }
+
+        // Try to sync to Supabase if online
+        if await networkMonitor.isConnected() {
+            do {
+                let dto = GoalOccurrenceDTO(from: occurrenceToCreate)
+
+                let response: GoalOccurrenceDTO = try await client
+                    .from("goal_occurrences")
+                    .insert(dto)
+                    .select()
+                    .single()
+                    .execute()
+                    .value
+
+                let created = response.toDomain
+
+                // Update cache with synced state
+                try await MainActor.run {
+                    try cacheService.saveOccurrence(created, syncState: .synced)
+                }
+
+                return created
+            } catch let error as PostgrestError {
+                throw SupabaseError.from(error)
+            } catch {
+                throw SupabaseError.from(error)
+            }
+        }
+
+        // Offline: Return cached version
+        return occurrenceToCreate
     }
 
     public func update(_ occurrence: GoalOccurrence) async throws {
-        do {
-            guard let userId = await client.auth.currentUser?.id else {
-                throw SupabaseError.unauthorized
-            }
-
-            var updatedOccurrence = occurrence
-            updatedOccurrence.updatedAt = Date()
-
-            let dto = GoalOccurrenceDTO(from: updatedOccurrence)
-
-            try await client
-                .from("goal_occurrences")
-                .update(dto)
-                .eq("id", value: occurrence.id.uuidString)
-                .eq("user_id", value: userId.uuidString)
-                .execute()
-        } catch let error as PostgrestError {
-            throw SupabaseError.from(error)
-        } catch {
-            throw SupabaseError.from(error)
+        guard let userId = await client.auth.currentUser?.id else {
+            throw SupabaseError.unauthorized
         }
+
+        var updatedOccurrence = occurrence
+        updatedOccurrence.updatedAt = Date()
+
+        // Save to cache with pending state
+        try await MainActor.run {
+            try cacheService.saveOccurrence(updatedOccurrence, syncState: .pending)
+        }
+
+        // Try to sync to Supabase if online
+        if await networkMonitor.isConnected() {
+            do {
+                let dto = GoalOccurrenceDTO(from: updatedOccurrence)
+
+                try await client
+                    .from("goal_occurrences")
+                    .update(dto)
+                    .eq("id", value: occurrence.id.uuidString)
+                    .eq("user_id", value: userId.uuidString)
+                    .execute()
+
+                // Update cache with synced state
+                try await MainActor.run {
+                    try cacheService.saveOccurrence(updatedOccurrence, syncState: .synced)
+                }
+            } catch let error as PostgrestError {
+                throw SupabaseError.from(error)
+            } catch {
+                throw SupabaseError.from(error)
+            }
+        }
+        // Offline: Keep pending state
     }
 
     public func completeTick(_ id: UUID) async throws {
