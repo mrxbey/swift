@@ -187,16 +187,20 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
         if occurrenceToCreate.userId != userId {
             occurrenceToCreate = GoalOccurrence(
                 id: occurrence.id,
-                userId: userId,
                 goalId: occurrence.goalId,
-                scheduleId: occurrence.scheduleId,
+                userId: userId,
                 scheduledDate: occurrence.scheduledDate,
+                dueAt: occurrence.dueAt,
+                status: occurrence.status,
                 targetCount: occurrence.targetCount,
                 completedCount: occurrence.completedCount,
-                status: occurrence.status,
-                renameOverride: occurrence.renameOverride,
+                keepUntilComplete: occurrence.keepUntilComplete,
+                rolledFromId: occurrence.rolledFromId,
+                rolledIntoId: occurrence.rolledIntoId,
+                nameOverride: occurrence.nameOverride,
+                emojiOverride: occurrence.emojiOverride,
                 contentSnapshot: occurrence.contentSnapshot,
-                lastCompletedAt: occurrence.lastCompletedAt,
+                isOneTime: occurrence.isOneTime,
                 createdAt: occurrence.createdAt,
                 updatedAt: Date()
             )

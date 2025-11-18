@@ -29,4 +29,16 @@ actor MockNetworkMonitor: Sendable {
         isConnectedValue = status.isConnected
         statusChangeHandler?(status)
     }
+
+    // Test helpers for repository tests
+    func setConnected(_ connected: Bool) {
+        isConnectedValue = connected
+        currentStatusValue = connected ? .connected(.wifi) : .disconnected
+    }
+
+    func reset() {
+        isConnectedValue = true
+        currentStatusValue = .connected(.wifi)
+        statusChangeHandler = nil
+    }
 }
