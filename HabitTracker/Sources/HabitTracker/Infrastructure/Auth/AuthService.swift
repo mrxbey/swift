@@ -9,7 +9,7 @@ import AuthenticationServices
 public actor AuthService {
     private let client: SupabaseClient
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init(client: SupabaseClient) {
         self.client = client
@@ -19,7 +19,7 @@ public actor AuthService {
         self.client = SupabaseService.shared.getClient()
     }
 
-    // MARK: - Session Management
+    /// MARK: - Session Management
 
     /// Returns the current authenticated user
     ///
@@ -42,7 +42,7 @@ public actor AuthService {
         await currentUser() != nil
     }
 
-    // MARK: - Email Authentication
+    /// MARK: - Email Authentication
 
     /// Signs up a new user with email and password
     ///
@@ -114,7 +114,7 @@ public actor AuthService {
         }
     }
 
-    // MARK: - Sign in with Apple
+    /// MARK: - Sign in with Apple
 
     /// Signs in with Apple using an authorization credential
     ///
@@ -146,7 +146,7 @@ public actor AuthService {
         }
     }
 
-    // MARK: - Sign Out
+    /// MARK: - Sign Out
 
     /// Signs out the current user
     ///
@@ -159,7 +159,7 @@ public actor AuthService {
         }
     }
 
-    // MARK: - Session Refresh
+    /// MARK: - Session Refresh
 
     /// Refreshes the current session
     ///
@@ -174,7 +174,7 @@ public actor AuthService {
         }
     }
 
-    // MARK: - Profile Management
+    /// MARK: - Profile Management
 
     /// Ensures a profile exists for the user
     ///
@@ -236,7 +236,7 @@ public actor AuthService {
             .execute()
     }
 
-    // MARK: - Email Verification
+    /// MARK: - Email Verification
 
     /// Checks if the current user's email is verified
     ///
@@ -269,7 +269,7 @@ public actor AuthService {
     }
 }
 
-// MARK: - AuthError
+/// MARK: - AuthError
 
 /// Authentication-related errors
 public enum AuthError: LocalizedError, Equatable, Sendable {

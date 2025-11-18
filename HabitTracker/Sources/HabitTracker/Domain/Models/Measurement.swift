@@ -16,7 +16,7 @@ public final class Measurement: Identifiable, Codable, Sendable, Equatable, Hash
     public let createdAt: Date
     public var updatedAt: Date
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init(
         id: UUID = UUID(),
@@ -40,7 +40,7 @@ public final class Measurement: Identifiable, Codable, Sendable, Equatable, Hash
         self.updatedAt = updatedAt
     }
 
-    // MARK: - Equatable
+    /// MARK: - Equatable
 
     public static func == (lhs: Measurement, rhs: Measurement) -> Bool {
         lhs.id == rhs.id &&
@@ -48,14 +48,14 @@ public final class Measurement: Identifiable, Codable, Sendable, Equatable, Hash
         lhs.unit == rhs.unit
     }
 
-    // MARK: - Hashable
+    /// MARK: - Hashable
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 }
 
-// MARK: - UnitKind
+/// MARK: - UnitKind
 
 /// Supported measurement units
 public enum UnitKind: String, Codable, Sendable, CaseIterable {
@@ -94,7 +94,7 @@ public enum UnitKind: String, Codable, Sendable, CaseIterable {
     }
 }
 
-// MARK: - GoalMeasureTarget
+/// MARK: - GoalMeasureTarget
 
 /// A versioned target for a measured goal
 ///
@@ -112,7 +112,7 @@ public final class GoalMeasureTarget: Identifiable, Codable, Sendable, Equatable
     public let createdAt: Date
     public var updatedAt: Date
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init(
         id: UUID = UUID(),
@@ -136,7 +136,7 @@ public final class GoalMeasureTarget: Identifiable, Codable, Sendable, Equatable
         self.updatedAt = updatedAt
     }
 
-    // MARK: - Computed Properties
+    /// MARK: - Computed Properties
 
     /// Check if this target is currently active
     public var isActive: Bool {
@@ -144,7 +144,7 @@ public final class GoalMeasureTarget: Identifiable, Codable, Sendable, Equatable
         return effectiveFrom <= now && (effectiveTo == nil || effectiveTo! > now)
     }
 
-    // MARK: - Equatable
+    /// MARK: - Equatable
 
     public static func == (lhs: GoalMeasureTarget, rhs: GoalMeasureTarget) -> Bool {
         lhs.id == rhs.id &&
@@ -152,7 +152,7 @@ public final class GoalMeasureTarget: Identifiable, Codable, Sendable, Equatable
         lhs.unit == rhs.unit
     }
 
-    // MARK: - Hashable
+    /// MARK: - Hashable
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)

@@ -71,7 +71,7 @@ public struct TodayView: View {
         }
     }
 
-    // MARK: - Header Section
+    /// MARK: - Header Section
 
     private var headerSection: some View {
         VStack(spacing: Theme.Spacing.small) {
@@ -130,7 +130,7 @@ public struct TodayView: View {
         }
     }
 
-    // MARK: - Recommendations Section
+    /// MARK: - Recommendations Section
 
     private var recommendationsSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
@@ -150,7 +150,7 @@ public struct TodayView: View {
         }
     }
 
-    // MARK: - Water Section
+    /// MARK: - Water Section
 
     private var waterSection: some View {
         Group {
@@ -162,7 +162,7 @@ public struct TodayView: View {
         }
     }
 
-    // MARK: - Occurrences Section
+    /// MARK: - Occurrences Section
 
     private var occurrencesSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
@@ -222,7 +222,7 @@ public struct TodayView: View {
         .padding(.vertical, Theme.Spacing.xxxLarge)
     }
 
-    // MARK: - Helpers
+    /// MARK: - Helpers
 
     private var formattedDate: String {
         let formatter = DateFormatter()
@@ -237,7 +237,7 @@ public struct TodayView: View {
     }
 }
 
-// MARK: - Supporting Views
+/// MARK: - Supporting Views
 
 struct StatRow: View {
     let icon: String
@@ -424,7 +424,7 @@ struct OccurrenceRow: View {
     }
 }
 
-// MARK: - Placeholder Views
+/// MARK: - Placeholder Views
 
 struct GoalEditorView: View {
     let store: StoreOf<GoalEditorFeature>
@@ -444,7 +444,7 @@ struct OccurrenceDetailView: View {
     }
 }
 
-// MARK: - Preview
+/// MARK: - Preview
 
 #if DEBUG
 #Preview("Today View") {

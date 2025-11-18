@@ -100,7 +100,7 @@ public actor SupabaseService: Sendable {
     }
 }
 
-// MARK: - Helper Types
+/// MARK: - Helper Types
 
 /// Minimal Profile structure for connection testing
 private struct Profile: Codable {

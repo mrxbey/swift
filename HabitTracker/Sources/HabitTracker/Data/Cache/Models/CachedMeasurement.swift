@@ -19,7 +19,7 @@ public final class CachedMeasurement {
     public var syncState: String
     public var pendingOperation: String?
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init(
         id: UUID,
@@ -49,7 +49,7 @@ public final class CachedMeasurement {
         self.pendingOperation = pendingOperation
     }
 
-    // MARK: - Conversion
+    /// MARK: - Conversion
 
     public convenience init(from measurement: Measurement, syncState: SyncState = .synced) {
         self.init(

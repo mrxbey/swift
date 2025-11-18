@@ -17,7 +17,7 @@ public final class Reflection: Identifiable, Codable, Sendable, Equatable, Hasha
     public let createdAt: Date
     public var updatedAt: Date
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init(
         id: UUID = UUID(),
@@ -43,7 +43,7 @@ public final class Reflection: Identifiable, Codable, Sendable, Equatable, Hasha
         self.updatedAt = updatedAt
     }
 
-    // MARK: - Computed Properties
+    /// MARK: - Computed Properties
 
     /// The scope of this reflection
     public var scope: ReflectionScope {
@@ -64,7 +64,7 @@ public final class Reflection: Identifiable, Codable, Sendable, Equatable, Hasha
         return formatter.string(from: reflectionDate)
     }
 
-    // MARK: - Equatable
+    /// MARK: - Equatable
 
     public static func == (lhs: Reflection, rhs: Reflection) -> Bool {
         lhs.id == rhs.id &&
@@ -72,14 +72,14 @@ public final class Reflection: Identifiable, Codable, Sendable, Equatable, Hasha
         lhs.mood == rhs.mood
     }
 
-    // MARK: - Hashable
+    /// MARK: - Hashable
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 }
 
-// MARK: - ReflectionMood
+/// MARK: - ReflectionMood
 
 /// Mood associated with a reflection
 public enum ReflectionMood: String, Codable, Sendable, CaseIterable {
@@ -104,7 +104,7 @@ public enum ReflectionMood: String, Codable, Sendable, CaseIterable {
     }
 }
 
-// MARK: - ReflectionScope
+/// MARK: - ReflectionScope
 
 /// The scope of a reflection
 public enum ReflectionScope: String, Codable, Sendable {

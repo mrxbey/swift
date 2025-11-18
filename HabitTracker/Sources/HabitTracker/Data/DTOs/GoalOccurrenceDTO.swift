@@ -23,7 +23,7 @@ public struct GoalOccurrenceDTO: Codable, Sendable, Equatable {
     public let createdAt: Date
     public let updatedAt: Date
 
-    // MARK: - CodingKeys
+    /// MARK: - CodingKeys
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -46,7 +46,7 @@ public struct GoalOccurrenceDTO: Codable, Sendable, Equatable {
         case updatedAt = "updated_at"
     }
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     /// Creates a DTO from a domain model
     ///
@@ -72,7 +72,7 @@ public struct GoalOccurrenceDTO: Codable, Sendable, Equatable {
         self.updatedAt = occurrence.updatedAt
     }
 
-    // MARK: - Conversion
+    /// MARK: - Conversion
 
     /// Converts the DTO to a domain model
     public var toDomain: GoalOccurrence {
@@ -98,7 +98,7 @@ public struct GoalOccurrenceDTO: Codable, Sendable, Equatable {
     }
 }
 
-// MARK: - ContentSnapshotDTO
+/// MARK: - ContentSnapshotDTO
 
 /// Data Transfer Object for ContentSnapshot
 ///

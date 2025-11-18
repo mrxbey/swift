@@ -104,7 +104,7 @@ enum TestFixtures {
         areaId: UUID = areaId,
         title: String = "Exercise Daily",
         emoji: String = "🏃",
-        kind: String = "tick",
+        kind: String = "habit",
         status: String = "active",
         keepUntilComplete: Bool = false,
         timesPerDay: Int = 1,

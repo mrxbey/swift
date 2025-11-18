@@ -10,7 +10,7 @@ public final class CacheService {
     private let modelContainer: ModelContainer
     private let modelContext: ModelContext
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init() throws {
         let schema = Schema([
@@ -34,7 +34,7 @@ public final class CacheService {
         self.modelContext.autosaveEnabled = true
     }
 
-    // MARK: - Area Operations
+    /// MARK: - Area Operations
 
     public func saveArea(_ area: Area, syncState: SyncState = .synced) throws {
         // Check if already exists
@@ -81,7 +81,7 @@ public final class CacheService {
         }
     }
 
-    // MARK: - Goal Operations
+    /// MARK: - Goal Operations
 
     public func saveGoal(_ goal: Goal, syncState: SyncState = .synced) throws {
         let descriptor = FetchDescriptor<CachedGoal>(
@@ -137,7 +137,7 @@ public final class CacheService {
         }
     }
 
-    // MARK: - Occurrence Operations
+    /// MARK: - Occurrence Operations
 
     public func saveOccurrence(_ occurrence: GoalOccurrence, syncState: SyncState = .synced) throws {
         let descriptor = FetchDescriptor<CachedOccurrence>(
@@ -191,7 +191,7 @@ public final class CacheService {
         }
     }
 
-    // MARK: - Measurement Operations
+    /// MARK: - Measurement Operations
 
     public func saveMeasurement(_ measurement: Measurement, syncState: SyncState = .synced) throws {
         let descriptor = FetchDescriptor<CachedMeasurement>(
@@ -229,7 +229,7 @@ public final class CacheService {
         }
     }
 
-    // MARK: - Sync State Management
+    /// MARK: - Sync State Management
 
     public func fetchPendingAreas() throws -> [CachedArea] {
         let descriptor = FetchDescriptor<CachedArea>(
@@ -263,7 +263,7 @@ public final class CacheService {
         return try modelContext.fetch(descriptor)
     }
 
-    // MARK: - Clear Cache
+    /// MARK: - Clear Cache
 
     public func clearAll() throws {
         try modelContext.delete(model: CachedArea.self)

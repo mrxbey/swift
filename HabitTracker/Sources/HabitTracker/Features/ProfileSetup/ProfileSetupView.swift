@@ -45,7 +45,7 @@ public struct ProfileSetupView: View {
         }
     }
 
-    // MARK: - Header
+    /// MARK: - Header
 
     private var headerSection: some View {
         VStack(spacing: 16) {
@@ -64,7 +64,7 @@ public struct ProfileSetupView: View {
         }
     }
 
-    // MARK: - Profile Fields
+    /// MARK: - Profile Fields
 
     private var profileFieldsSection: some View {
         VStack(spacing: 24) {
@@ -147,7 +147,7 @@ public struct ProfileSetupView: View {
         }
     }
 
-    // MARK: - Buttons
+    /// MARK: - Buttons
 
     private var buttonsSection: some View {
         VStack(spacing: 16) {
@@ -178,7 +178,7 @@ public struct ProfileSetupView: View {
         }
     }
 
-    // MARK: - Helpers
+    /// MARK: - Helpers
 
     private func errorBanner(_ message: String) -> some View {
         HStack(spacing: 12) {
@@ -197,7 +197,7 @@ public struct ProfileSetupView: View {
     }
 }
 
-// MARK: - Preview
+/// MARK: - Preview
 
 #if DEBUG
 #Preview {

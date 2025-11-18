@@ -19,7 +19,7 @@ struct HabitTrackerApp: App {
     }
 }
 
-// MARK: - AppFeature
+/// MARK: - AppFeature
 
 @Reducer
 struct AppFeature {
@@ -99,7 +99,7 @@ struct AppFeature {
         Reduce { state, action in
             switch action {
 
-            // MARK: Lifecycle
+            /// MARK: Lifecycle
 
             case .task:
                 return .run { send in
@@ -142,7 +142,7 @@ struct AppFeature {
                 state.authentication = AuthenticationFeature.State()
                 return .send(.stopBackgroundSync)
 
-            // MARK: Sync
+            /// MARK: Sync
 
             case let .startBackgroundSync(userId):
                 return .run { _ in
@@ -165,13 +165,13 @@ struct AppFeature {
                     await syncCoordinator.sync(userId: userId)
                 }
 
-            // MARK: Tab Navigation
+            /// MARK: Tab Navigation
 
             case let .tabSelected(tab):
                 state.selectedTab = tab
                 return .none
 
-            // MARK: Authentication
+            /// MARK: Authentication
 
             case .authentication(.delegate(.authenticationSucceeded(let session))):
                 // Check if profile exists
@@ -187,7 +187,7 @@ struct AppFeature {
             case .authentication:
                 return .none
 
-            // MARK: Profile Setup
+            /// MARK: Profile Setup
 
             case .profileSetup(.delegate(.profileSetupCompleted)):
                 // Profile setup completed, mark as authenticated
@@ -212,7 +212,7 @@ struct AppFeature {
             case .profileSetup:
                 return .none
 
-            // MARK: Child Features
+            /// MARK: Child Features
 
             case .today, .areas, .insights, .programs, .settings:
                 return .none
@@ -242,7 +242,7 @@ struct AppFeature {
         }
     }
 
-    // MARK: - Helper Methods
+    /// MARK: - Helper Methods
 
     private func fetchProfile(userId: UUID) async throws -> Profile {
         let dto: ProfileDTO = try await supabaseClient
@@ -257,7 +257,7 @@ struct AppFeature {
     }
 }
 
-// MARK: - AppView
+/// MARK: - AppView
 
 struct AppView: View {
     @Bindable var store: StoreOf<AppFeature>
@@ -288,7 +288,7 @@ struct AppView: View {
         }
     }
 
-    // MARK: - Loading View
+    /// MARK: - Loading View
 
     private var loadingView: some View {
         VStack(spacing: 20) {
@@ -304,7 +304,7 @@ struct AppView: View {
         }
     }
 
-    // MARK: - Main Tab View
+    /// MARK: - Main Tab View
 
     private var mainTabView: some View {
         TabView(selection: $store.selectedTab.sending(\.tabSelected)) {
@@ -340,7 +340,7 @@ struct AppView: View {
     }
 }
 
-// MARK: - Placeholder Features
+/// MARK: - Placeholder Features
 
 @Reducer
 struct AreasFeature {
@@ -382,7 +382,7 @@ struct SettingsFeature {
     }
 }
 
-// MARK: - Preview
+/// MARK: - Preview
 
 #if DEBUG
 #Preview {

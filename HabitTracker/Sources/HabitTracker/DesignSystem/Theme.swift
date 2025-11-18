@@ -8,7 +8,7 @@ import SwiftUI
 /// Central theme configuration for the app
 public enum Theme {
 
-    // MARK: - Colors
+    /// MARK: - Colors
 
     public enum Colors {
         // Primary brand colors
@@ -69,7 +69,7 @@ public enum Theme {
         )
     }
 
-    // MARK: - Typography
+    /// MARK: - Typography
 
     public enum Typography {
         // Headings
@@ -94,7 +94,7 @@ public enum Theme {
         public static let number = Font.system(size: 32, weight: .bold, design: .rounded)
     }
 
-    // MARK: - Spacing
+    /// MARK: - Spacing
 
     public enum Spacing {
         public static let xxxSmall: CGFloat = 2
@@ -108,7 +108,7 @@ public enum Theme {
         public static let xxxLarge: CGFloat = 64
     }
 
-    // MARK: - Corner Radius
+    /// MARK: - Corner Radius
 
     public enum CornerRadius {
         public static let small: CGFloat = 8
@@ -118,7 +118,7 @@ public enum Theme {
         public static let circle: CGFloat = 1000
     }
 
-    // MARK: - Shadows
+    /// MARK: - Shadows
 
     public enum Shadow {
         public static let small = ShadowStyle(radius: 4, y: 2)
@@ -138,7 +138,7 @@ public enum Theme {
         }
     }
 
-    // MARK: - Animation
+    /// MARK: - Animation
 
     public enum Animation {
         public static let quick = SwiftUI.Animation.easeInOut(duration: 0.2)
@@ -147,7 +147,7 @@ public enum Theme {
         public static let spring = SwiftUI.Animation.spring(response: 0.3, dampingFraction: 0.7)
     }
 
-    // MARK: - Icons
+    /// MARK: - Icons
 
     public enum Icons {
         // Navigation
@@ -183,7 +183,7 @@ public enum Theme {
     }
 }
 
-// MARK: - Color Extension
+/// MARK: - Color Extension
 
 extension Color {
     init(hex: String) {
@@ -212,7 +212,7 @@ extension Color {
     }
 }
 
-// MARK: - View Extension
+/// MARK: - View Extension
 
 extension View {
     /// Applies the standard card style

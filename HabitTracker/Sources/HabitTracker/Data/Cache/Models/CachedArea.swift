@@ -20,7 +20,7 @@ public final class CachedArea {
     public var syncState: String // "synced", "pending", "failed"
     public var pendingOperation: String? // "create", "update", "delete"
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init(
         id: UUID,
@@ -48,7 +48,7 @@ public final class CachedArea {
         self.pendingOperation = pendingOperation
     }
 
-    // MARK: - Conversion
+    /// MARK: - Conversion
 
     /// Creates a cached model from a domain model
     public convenience init(from area: Area, syncState: SyncState = .synced) {
@@ -95,7 +95,7 @@ public final class CachedArea {
     }
 }
 
-// MARK: - SyncState
+/// MARK: - SyncState
 
 public enum SyncState: String, Codable {
     case synced = "synced"
@@ -103,7 +103,7 @@ public enum SyncState: String, Codable {
     case failed = "failed"
 }
 
-// MARK: - PendingOperation
+/// MARK: - PendingOperation
 
 public enum PendingOperation: String, Codable {
     case create = "create"

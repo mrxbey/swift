@@ -16,7 +16,7 @@ public final class SyncEngine {
     private let userDefaults = UserDefaults.standard
     private let lastSyncKey = "com.habittracker.lastSync"
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init(cacheService: CacheService, supabaseClient: SupabaseClient) {
         self.cacheService = cacheService
@@ -29,7 +29,7 @@ public final class SyncEngine {
         }
     }
 
-    // MARK: - Full Sync
+    /// MARK: - Full Sync
 
     /// Performs a full bidirectional sync
     ///
@@ -50,7 +50,7 @@ public final class SyncEngine {
         saveLastSyncTimestamps()
     }
 
-    // MARK: - Upload Pending Changes
+    /// MARK: - Upload Pending Changes
 
     private func uploadPendingChanges(userId: UUID) async throws {
         // Upload pending areas
@@ -163,7 +163,7 @@ public final class SyncEngine {
         }
     }
 
-    // MARK: - Download Updates
+    /// MARK: - Download Updates
 
     private func downloadUpdates(userId: UUID) async throws {
         // Download updated areas
@@ -263,7 +263,7 @@ public final class SyncEngine {
         lastSyncTimestamps["measurements"] = Date()
     }
 
-    // MARK: - Conflict Resolution
+    /// MARK: - Conflict Resolution
 
     /// Resolves conflicts using last-write-wins strategy
     ///
@@ -273,7 +273,7 @@ public final class SyncEngine {
         return remoteUpdatedAt > localUpdatedAt ? remote : local
     }
 
-    // MARK: - Persistence
+    /// MARK: - Persistence
 
     private func saveLastSyncTimestamps() {
         if let data = try? JSONEncoder().encode(lastSyncTimestamps) {
@@ -286,7 +286,7 @@ public final class SyncEngine {
         userDefaults.removeObject(forKey: lastSyncKey)
     }
 
-    // MARK: - Cleanup
+    /// MARK: - Cleanup
 
     /// Clears old synced data to free up space
     ///
@@ -297,7 +297,7 @@ public final class SyncEngine {
     }
 }
 
-// MARK: - SyncError
+/// MARK: - SyncError
 
 public enum SyncError: LocalizedError {
     case uploadFailed(String)
@@ -316,7 +316,7 @@ public enum SyncError: LocalizedError {
     }
 }
 
-// MARK: - Date Extension
+/// MARK: - Date Extension
 
 private extension Date {
     var iso8601String: String {

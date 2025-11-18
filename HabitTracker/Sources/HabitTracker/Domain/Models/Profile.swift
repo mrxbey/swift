@@ -18,7 +18,7 @@ public final class Profile: Identifiable, Codable, Sendable, Equatable, Hashable
     public let createdAt: Date
     public var updatedAt: Date
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init(
         id: UUID,
@@ -48,7 +48,7 @@ public final class Profile: Identifiable, Codable, Sendable, Equatable, Hashable
         self.updatedAt = updatedAt
     }
 
-    // MARK: - Computed Properties
+    /// MARK: - Computed Properties
 
     /// The user's TimeZone
     public var timeZone: TimeZone {
@@ -84,7 +84,7 @@ public final class Profile: Identifiable, Codable, Sendable, Equatable, Hashable
         }
     }
 
-    // MARK: - Equatable
+    /// MARK: - Equatable
 
     public static func == (lhs: Profile, rhs: Profile) -> Bool {
         lhs.id == rhs.id &&
@@ -92,7 +92,7 @@ public final class Profile: Identifiable, Codable, Sendable, Equatable, Hashable
         lhs.totalPoints == rhs.totalPoints
     }
 
-    // MARK: - Hashable
+    /// MARK: - Hashable
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)

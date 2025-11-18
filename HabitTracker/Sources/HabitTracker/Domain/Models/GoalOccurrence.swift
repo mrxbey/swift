@@ -21,7 +21,7 @@ public final class GoalOccurrence: Identifiable, Codable, Sendable, Equatable, H
     public let createdAt: Date
     public var updatedAt: Date
 
-    // MARK: - Lifecycle
+    /// MARK: - Lifecycle
 
     public init(
         id: UUID = UUID(),
@@ -61,7 +61,7 @@ public final class GoalOccurrence: Identifiable, Codable, Sendable, Equatable, H
         self.updatedAt = updatedAt
     }
 
-    // MARK: - Computed Properties
+    /// MARK: - Computed Properties
 
     public var displayTitle: String {
         nameOverride ?? contentSnapshot?.title ?? "Untitled"
@@ -116,7 +116,7 @@ public final class GoalOccurrence: Identifiable, Codable, Sendable, Equatable, H
         return snapshot.points
     }
 
-    // MARK: - Methods
+    /// MARK: - Methods
 
     public func incrementCompletion() {
         guard completedCount < targetCount else { return }
@@ -146,7 +146,7 @@ public final class GoalOccurrence: Identifiable, Codable, Sendable, Equatable, H
         status = .cancelled
     }
 
-    // MARK: - Equatable
+    /// MARK: - Equatable
 
     public static func == (lhs: GoalOccurrence, rhs: GoalOccurrence) -> Bool {
         lhs.id == rhs.id &&
@@ -155,14 +155,14 @@ public final class GoalOccurrence: Identifiable, Codable, Sendable, Equatable, H
         lhs.nameOverride == rhs.nameOverride
     }
 
-    // MARK: - Hashable
+    /// MARK: - Hashable
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 }
 
-// MARK: - OccurrenceStatus
+/// MARK: - OccurrenceStatus
 
 public enum OccurrenceStatus: String, Codable, Sendable, CaseIterable {
     case pending
@@ -210,7 +210,7 @@ public enum OccurrenceStatus: String, Codable, Sendable, CaseIterable {
     }
 }
 
-// MARK: - ContentSnapshot
+/// MARK: - ContentSnapshot
 
 /// Snapshot of goal content at the time of occurrence creation
 public struct ContentSnapshot: Codable, Sendable, Equatable, Hashable {
@@ -235,7 +235,7 @@ public struct ContentSnapshot: Codable, Sendable, Equatable, Hashable {
     }
 }
 
-// MARK: - Mock Data
+/// MARK: - Mock Data
 
 #if DEBUG
 extension GoalOccurrence {

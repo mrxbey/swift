@@ -42,7 +42,7 @@ public enum SupabaseError: LocalizedError, Equatable, Sendable {
     /// Unknown error with message
     case unknown(String)
 
-    // MARK: - LocalizedError Conformance
+    /// MARK: - LocalizedError Conformance
 
     public var errorDescription: String? {
         switch self {
@@ -124,7 +124,7 @@ public enum SupabaseError: LocalizedError, Equatable, Sendable {
         }
     }
 
-    // MARK: - Error Mapping
+    /// MARK: - Error Mapping
 
     /// Maps a PostgrestError to a SupabaseError
     ///
@@ -249,7 +249,7 @@ public enum SupabaseError: LocalizedError, Equatable, Sendable {
         return .unknown(error.localizedDescription)
     }
 
-    // MARK: - Helpers
+    /// MARK: - Helpers
 
     /// Extracts field name from error message
     private static func extractFieldFromMessage(_ message: String) -> String {
@@ -267,7 +267,7 @@ public enum SupabaseError: LocalizedError, Equatable, Sendable {
         return "value"
     }
 
-    // MARK: - Equatable
+    /// MARK: - Equatable
 
     public static func == (lhs: SupabaseError, rhs: SupabaseError) -> Bool {
         switch (lhs, rhs) {

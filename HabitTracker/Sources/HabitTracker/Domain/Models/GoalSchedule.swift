@@ -16,7 +16,7 @@ public final class GoalSchedule: Identifiable, Codable, Sendable, Equatable, Has
     public let createdAt: Date
     public var updatedAt: Date
 
-    // MARK: - Lifecycle
+    /// MARK: - Lifecycle
 
     public init(
         id: UUID = UUID(),
@@ -46,7 +46,7 @@ public final class GoalSchedule: Identifiable, Codable, Sendable, Equatable, Has
         self.updatedAt = updatedAt
     }
 
-    // MARK: - Computed Properties
+    /// MARK: - Computed Properties
 
     public var isRepeating: Bool {
         freq != .none
@@ -81,7 +81,7 @@ public final class GoalSchedule: Identifiable, Codable, Sendable, Equatable, Has
         }
     }
 
-    // MARK: - Validation
+    /// MARK: - Validation
 
     public func validate() throws {
         guard interval >= 1 else {
@@ -116,7 +116,7 @@ public final class GoalSchedule: Identifiable, Codable, Sendable, Equatable, Has
         }
     }
 
-    // MARK: - Helpers
+    /// MARK: - Helpers
 
     private func isoWeekdayToName(_ day: Int) -> String {
         let names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -134,7 +134,7 @@ public final class GoalSchedule: Identifiable, Codable, Sendable, Equatable, Has
         return "\(n)\(suffix)"
     }
 
-    // MARK: - Equatable
+    /// MARK: - Equatable
 
     public static func == (lhs: GoalSchedule, rhs: GoalSchedule) -> Bool {
         lhs.id == rhs.id &&
@@ -144,14 +144,14 @@ public final class GoalSchedule: Identifiable, Codable, Sendable, Equatable, Has
         lhs.byMonthday == rhs.byMonthday
     }
 
-    // MARK: - Hashable
+    /// MARK: - Hashable
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 }
 
-// MARK: - PeriodFrequency
+/// MARK: - PeriodFrequency
 
 public enum PeriodFrequency: String, Codable, Sendable, CaseIterable {
     case none       // One-time task
@@ -169,7 +169,7 @@ public enum PeriodFrequency: String, Codable, Sendable, CaseIterable {
     }
 }
 
-// MARK: - ScheduleValidationError
+/// MARK: - ScheduleValidationError
 
 public enum ScheduleValidationError: LocalizedError {
     case invalidInterval
@@ -197,7 +197,7 @@ public enum ScheduleValidationError: LocalizedError {
     }
 }
 
-// MARK: - Mock Data
+/// MARK: - Mock Data
 
 #if DEBUG
 extension GoalSchedule {

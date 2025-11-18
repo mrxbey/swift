@@ -14,7 +14,7 @@ public struct MeasurementDTO: Codable, Sendable, Equatable {
     public let createdAt: Date
     public let updatedAt: Date
 
-    // MARK: - CodingKeys
+    /// MARK: - CodingKeys
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -28,7 +28,7 @@ public struct MeasurementDTO: Codable, Sendable, Equatable {
         case updatedAt = "updated_at"
     }
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     /// Creates a DTO from a domain model
     ///
@@ -55,7 +55,7 @@ public struct MeasurementDTO: Codable, Sendable, Equatable {
         self.updatedAt = measurement.updatedAt
     }
 
-    // MARK: - Conversion
+    /// MARK: - Conversion
 
     /// Converts the DTO to a domain model
     public var toDomain: Measurement {
@@ -81,7 +81,7 @@ public struct MeasurementDTO: Codable, Sendable, Equatable {
     }
 }
 
-// MARK: - GoalMeasureTargetDTO
+/// MARK: - GoalMeasureTargetDTO
 
 /// Data Transfer Object for GoalMeasureTarget entity
 ///

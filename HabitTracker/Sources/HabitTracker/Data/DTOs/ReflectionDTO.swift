@@ -15,7 +15,7 @@ public struct ReflectionDTO: Codable, Sendable, Equatable {
     public let createdAt: Date
     public let updatedAt: Date
 
-    // MARK: - CodingKeys
+    /// MARK: - CodingKeys
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -30,7 +30,7 @@ public struct ReflectionDTO: Codable, Sendable, Equatable {
         case updatedAt = "updated_at"
     }
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     /// Creates a DTO from a domain model
     ///
@@ -48,7 +48,7 @@ public struct ReflectionDTO: Codable, Sendable, Equatable {
         self.updatedAt = reflection.updatedAt
     }
 
-    // MARK: - Conversion
+    /// MARK: - Conversion
 
     /// Converts the DTO to a domain model
     public var toDomain: Reflection {

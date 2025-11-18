@@ -11,7 +11,7 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
     private let networkMonitor: NetworkMonitor
     private let syncEngine: SyncEngine
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init(
         client: SupabaseClient,
@@ -25,9 +25,12 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
         self.syncEngine = syncEngine
     }
 
-    public init() async {
+    /// Convenience initializer using shared service and dependencies
+    ///
+    /// - Throws: CacheService initialization errors (disk full, permissions, etc.)
+    public init() async throws {
         self.client = await SupabaseService.shared.getClient()
-        let sharedCache = try! CacheService()
+        let sharedCache = try CacheService()
         self.cacheService = sharedCache
         self.networkMonitor = NetworkMonitor()
         self.syncEngine = SyncEngine(
@@ -36,7 +39,7 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
         )
     }
 
-    // MARK: - OccurrenceRepository Implementation
+    /// MARK: - OccurrenceRepository Implementation
 
     public func fetchToday() async throws -> [GoalOccurrence] {
         let today = Date()
@@ -376,7 +379,7 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
     }
 }
 
-// MARK: - Date Extensions
+/// MARK: - Date Extensions
 
 private extension Date {
     /// Converts date to ISO 8601 date-only string (yyyy-MM-dd)

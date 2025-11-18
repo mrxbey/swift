@@ -29,7 +29,7 @@ public final class CachedOccurrence {
     public var syncState: String
     public var pendingOperation: String?
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init(
         id: UUID,
@@ -79,7 +79,7 @@ public final class CachedOccurrence {
         self.pendingOperation = pendingOperation
     }
 
-    // MARK: - Conversion
+    /// MARK: - Conversion
 
     public convenience init(from occurrence: GoalOccurrence, syncState: SyncState = .synced) {
         self.init(

@@ -15,13 +15,13 @@ public actor NetworkMonitor {
     // Callbacks
     private var statusChangeHandlers: [@Sendable (NetworkStatus) -> Void] = []
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init() {
         self.monitor = NWPathMonitor()
     }
 
-    // MARK: - Monitoring
+    /// MARK: - Monitoring
 
     /// Starts monitoring network status
     public func startMonitoring() {
@@ -58,7 +58,7 @@ public actor NetworkMonitor {
         }
     }
 
-    // MARK: - Status
+    /// MARK: - Status
 
     /// Returns current network status
     public func getCurrentStatus() -> NetworkStatus {
@@ -70,7 +70,7 @@ public actor NetworkMonitor {
         currentStatus.isConnected
     }
 
-    // MARK: - Callbacks
+    /// MARK: - Callbacks
 
     /// Registers a callback for status changes
     public func onStatusChange(_ handler: @escaping @Sendable (NetworkStatus) -> Void) {
@@ -83,14 +83,14 @@ public actor NetworkMonitor {
         }
     }
 
-    // MARK: - Cleanup
+    /// MARK: - Cleanup
 
     deinit {
         monitor.cancel()
     }
 }
 
-// MARK: - NetworkStatus
+/// MARK: - NetworkStatus
 
 public enum NetworkStatus: Equatable, Sendable {
     case connected(ConnectionType)
@@ -128,7 +128,7 @@ public enum NetworkStatus: Equatable, Sendable {
     }
 }
 
-// MARK: - ConnectionType
+/// MARK: - ConnectionType
 
 public enum ConnectionType: Equatable, Sendable {
     case wifi

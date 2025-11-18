@@ -39,7 +39,7 @@ struct ProgramsView: View {
         }
     }
 
-    // MARK: - Categories Section
+    /// MARK: - Categories Section
 
     private var categoriesSection: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -63,7 +63,7 @@ struct ProgramsView: View {
         }
     }
 
-    // MARK: - Programs Grid
+    /// MARK: - Programs Grid
 
     private var programsGrid: some View {
         LazyVGrid(
@@ -81,7 +81,7 @@ struct ProgramsView: View {
         }
     }
 
-    // MARK: - Empty State
+    /// MARK: - Empty State
 
     private var emptyState: some View {
         VStack(spacing: Theme.Spacing.medium) {
@@ -101,7 +101,7 @@ struct ProgramsView: View {
     }
 }
 
-// MARK: - Supporting Views
+/// MARK: - Supporting Views
 
 struct CategoryPill: View {
     let title: String
@@ -179,7 +179,7 @@ struct ProgramCard: View {
     }
 }
 
-// MARK: - Program Detail View
+/// MARK: - Program Detail View
 
 struct ProgramDetailView: View {
     @Bindable var store: StoreOf<ProgramDetailFeature>
@@ -300,7 +300,7 @@ struct ProgramItemRow: View {
     }
 }
 
-// MARK: - ProgramsFeature
+/// MARK: - ProgramsFeature
 
 @Reducer
 struct ProgramsFeature {
@@ -431,7 +431,7 @@ struct ProgramDetailFeature {
     }
 }
 
-// MARK: - Models
+/// MARK: - Models
 
 struct Program: Identifiable, Equatable {
     let id: UUID
@@ -483,7 +483,7 @@ struct ProgramItem: Identifiable, Equatable {
     }
 }
 
-// MARK: - Preview
+/// MARK: - Preview
 
 #if DEBUG
 #Preview {

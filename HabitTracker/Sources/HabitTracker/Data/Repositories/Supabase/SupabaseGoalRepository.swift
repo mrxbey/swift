@@ -11,7 +11,7 @@ public actor SupabaseGoalRepository: GoalRepository {
     private let networkMonitor: NetworkMonitor
     private let syncEngine: SyncEngine
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init(
         client: SupabaseClient,
@@ -25,9 +25,12 @@ public actor SupabaseGoalRepository: GoalRepository {
         self.syncEngine = syncEngine
     }
 
-    public init() async {
+    /// Convenience initializer using shared service and dependencies
+    ///
+    /// - Throws: CacheService initialization errors (disk full, permissions, etc.)
+    public init() async throws {
         self.client = await SupabaseService.shared.getClient()
-        let sharedCache = try! CacheService()
+        let sharedCache = try CacheService()
         self.cacheService = sharedCache
         self.networkMonitor = NetworkMonitor()
         self.syncEngine = SyncEngine(
@@ -36,7 +39,7 @@ public actor SupabaseGoalRepository: GoalRepository {
         )
     }
 
-    // MARK: - GoalRepository Implementation
+    /// MARK: - GoalRepository Implementation
 
     public func fetchAll() async throws -> [Goal] {
         guard let userId = await client.auth.currentUser?.id else {
@@ -468,7 +471,7 @@ public actor SupabaseGoalRepository: GoalRepository {
     }
 }
 
-// MARK: - Date Extension
+/// MARK: - Date Extension
 
 private extension Date {
     var iso8601String: String {

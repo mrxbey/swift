@@ -36,7 +36,7 @@ struct InsightsView: View {
         }
     }
 
-    // MARK: - Streaks Section
+    /// MARK: - Streaks Section
 
     private var streaksSection: some View {
         VStack(spacing: Theme.Spacing.medium) {
@@ -62,7 +62,7 @@ struct InsightsView: View {
         }
     }
 
-    // MARK: - Points Section
+    /// MARK: - Points Section
 
     private var pointsSection: some View {
         VStack(spacing: Theme.Spacing.medium) {
@@ -92,7 +92,7 @@ struct InsightsView: View {
         }
     }
 
-    // MARK: - Top Goals Section
+    /// MARK: - Top Goals Section
 
     private var topGoalsSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
@@ -114,7 +114,7 @@ struct InsightsView: View {
         }
     }
 
-    // MARK: - Completion Rate Section
+    /// MARK: - Completion Rate Section
 
     private var completionRateSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
@@ -138,7 +138,7 @@ struct InsightsView: View {
     }
 }
 
-// MARK: - Supporting Views
+/// MARK: - Supporting Views
 
 struct StreakCard: View {
     let title: String
@@ -272,7 +272,7 @@ struct CompletionChart: View {
     }
 }
 
-// MARK: - InsightsFeature
+/// MARK: - InsightsFeature
 
 @Reducer
 struct InsightsFeature {
@@ -340,7 +340,7 @@ struct InsightsFeature {
     }
 }
 
-// MARK: - Models
+/// MARK: - Models
 
 struct TopGoalItem: Identifiable, Equatable {
     let id: UUID
@@ -369,7 +369,7 @@ struct CompletionDataPoint: Identifiable, Equatable {
     let completionRate: Double
 }
 
-// MARK: - Preview
+/// MARK: - Preview
 
 #if DEBUG
 #Preview {

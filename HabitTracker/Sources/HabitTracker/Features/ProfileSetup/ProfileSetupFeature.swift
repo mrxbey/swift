@@ -7,7 +7,7 @@ import Foundation
 @Reducer
 public struct ProfileSetupFeature {
 
-    // MARK: - State
+    /// MARK: - State
 
     @ObservableState
     public struct State: Equatable {
@@ -35,7 +35,7 @@ public struct ProfileSetupFeature {
         }
     }
 
-    // MARK: - Action
+    /// MARK: - Action
 
     public enum Action: Sendable, BindableAction {
         case binding(BindingAction<State>)
@@ -50,11 +50,11 @@ public struct ProfileSetupFeature {
         }
     }
 
-    // MARK: - Dependencies
+    /// MARK: - Dependencies
 
     @Dependency(\.supabaseClient) var supabaseClient
 
-    // MARK: - Reducer
+    /// MARK: - Reducer
 
     public var body: some ReducerOf<Self> {
         BindableReducer()
@@ -139,7 +139,7 @@ public struct ProfileSetupFeature {
         }
     }
 
-    // MARK: - Helper Methods
+    /// MARK: - Helper Methods
 
     private func saveProfile(_ profile: Profile) async throws {
         let dto = ProfileDTO(from: profile)
@@ -151,7 +151,7 @@ public struct ProfileSetupFeature {
     }
 }
 
-// MARK: - Dependency Key
+/// MARK: - Dependency Key
 
 extension DependencyValues {
     public var supabaseClient: SupabaseClient {

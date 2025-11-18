@@ -10,7 +10,7 @@ public actor RealtimeService {
     private let client: SupabaseClient
     private var channels: [String: RealtimeChannel] = [:]
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init(client: SupabaseClient) {
         self.client = client
@@ -27,7 +27,7 @@ public actor RealtimeService {
         }
     }
 
-    // MARK: - Occurrence Subscriptions
+    /// MARK: - Occurrence Subscriptions
 
     /// Subscribes to changes in goal_occurrences for the current user
     ///
@@ -163,7 +163,7 @@ public actor RealtimeService {
         }
     }
 
-    // MARK: - Channel Management
+    /// MARK: - Channel Management
 
     private func storeChannel(_ name: String, _ channel: RealtimeChannel) {
         channels[name] = channel
@@ -187,7 +187,7 @@ public actor RealtimeService {
         channels.removeAll()
     }
 
-    // MARK: - Event Handlers
+    /// MARK: - Event Handlers
 
     private func handleOccurrenceChange(
         _ payload: RealtimeMessage,
@@ -301,7 +301,7 @@ public actor RealtimeService {
     }
 }
 
-// MARK: - Event Types
+/// MARK: - Event Types
 
 /// Event types for occurrence changes
 public enum OccurrenceEvent: Sendable, Equatable {

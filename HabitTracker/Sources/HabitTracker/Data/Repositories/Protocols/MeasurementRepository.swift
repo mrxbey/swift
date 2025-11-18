@@ -100,7 +100,7 @@ public protocol MeasurementRepository: Sendable {
     ) async throws -> GoalMeasureTarget
 }
 
-// MARK: - WaterDataPoint
+/// MARK: - WaterDataPoint
 
 /// A single data point for water progress charting
 public struct WaterDataPoint: Codable, Sendable, Equatable {

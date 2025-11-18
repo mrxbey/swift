@@ -24,7 +24,7 @@ public final class CachedGoal {
     public var syncState: String
     public var pendingOperation: String?
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init(
         id: UUID,
@@ -64,7 +64,7 @@ public final class CachedGoal {
         self.pendingOperation = pendingOperation
     }
 
-    // MARK: - Conversion
+    /// MARK: - Conversion
 
     public convenience init(from goal: Goal, syncState: SyncState = .synced) {
         self.init(

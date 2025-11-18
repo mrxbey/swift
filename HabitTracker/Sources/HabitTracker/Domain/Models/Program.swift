@@ -21,7 +21,7 @@ public final class Program: Identifiable, Codable, Sendable, Equatable, Hashable
     public let createdAt: Date
     public var updatedAt: Date
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init(
         id: UUID = UUID(),
@@ -55,7 +55,7 @@ public final class Program: Identifiable, Codable, Sendable, Equatable, Hashable
         self.updatedAt = updatedAt
     }
 
-    // MARK: - Computed Properties
+    /// MARK: - Computed Properties
 
     /// Display name with emoji if available
     public var displayName: String {
@@ -81,7 +81,7 @@ public final class Program: Identifiable, Codable, Sendable, Equatable, Hashable
         }
     }
 
-    // MARK: - Equatable
+    /// MARK: - Equatable
 
     public static func == (lhs: Program, rhs: Program) -> Bool {
         lhs.id == rhs.id &&
@@ -89,14 +89,14 @@ public final class Program: Identifiable, Codable, Sendable, Equatable, Hashable
         lhs.category == rhs.category
     }
 
-    // MARK: - Hashable
+    /// MARK: - Hashable
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 }
 
-// MARK: - ProgramCategory
+/// MARK: - ProgramCategory
 
 /// Program categories for organization
 public enum ProgramCategory: String, Codable, Sendable, CaseIterable {
@@ -127,7 +127,7 @@ public enum ProgramCategory: String, Codable, Sendable, CaseIterable {
     }
 }
 
-// MARK: - ProgramDifficulty
+/// MARK: - ProgramDifficulty
 
 /// Program difficulty levels
 public enum ProgramDifficulty: String, Codable, Sendable, CaseIterable {
@@ -148,7 +148,7 @@ public enum ProgramDifficulty: String, Codable, Sendable, CaseIterable {
     }
 }
 
-// MARK: - ProgramGoal
+/// MARK: - ProgramGoal
 
 /// A goal template within a program
 ///

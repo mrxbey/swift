@@ -25,7 +25,7 @@ public final class SyncCoordinator: ObservableObject {
     private let autoSyncInterval: TimeInterval = 300 // 5 minutes
     private var lastAutoSyncDate: Date?
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init(
         cacheService: CacheService,
@@ -39,7 +39,7 @@ public final class SyncCoordinator: ObservableObject {
         setupNetworkMonitoring()
     }
 
-    // MARK: - Network Monitoring
+    /// MARK: - Network Monitoring
 
     private func setupNetworkMonitoring() {
         Task {
@@ -64,7 +64,7 @@ public final class SyncCoordinator: ObservableObject {
         }
     }
 
-    // MARK: - Sync Operations
+    /// MARK: - Sync Operations
 
     /// Triggers a manual sync
     ///
@@ -138,7 +138,7 @@ public final class SyncCoordinator: ObservableObject {
         syncTask = nil
     }
 
-    // MARK: - Cache Management
+    /// MARK: - Cache Management
 
     /// Clears local cache
     ///
@@ -155,7 +155,7 @@ public final class SyncCoordinator: ObservableObject {
         try syncEngine.clearOldCachedData()
     }
 
-    // MARK: - Status
+    /// MARK: - Status
 
     /// Checks if offline changes are pending
     public func hasPendingChanges() async throws -> Bool {
@@ -177,7 +177,7 @@ public final class SyncCoordinator: ObservableObject {
         return areas.count + goals.count + occurrences.count + measurements.count
     }
 
-    // MARK: - Cleanup
+    /// MARK: - Cleanup
 
     deinit {
         Task {

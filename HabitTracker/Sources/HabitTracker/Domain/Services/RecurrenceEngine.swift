@@ -96,7 +96,7 @@ public struct RecurrenceEngine: Sendable {
             : nil
     }
 
-    // MARK: - Private Methods
+    /// MARK: - Private Methods
 
     private func shouldInclude(
         _ date: Date,
@@ -175,7 +175,7 @@ public struct RecurrenceEngine: Sendable {
         return weekday == 1 ? 7 : weekday - 1
     }
 
-    // MARK: - Convenience
+    /// MARK: - Convenience
 
     /// Generate occurrences for a rolling 14-day window (for notifications)
     public func generateNotificationWindow(
@@ -211,7 +211,7 @@ public struct RecurrenceEngine: Sendable {
     }
 }
 
-// MARK: - DateRange
+/// MARK: - DateRange
 
 public enum DateRange {
     case today
@@ -254,7 +254,7 @@ public enum DateRange {
     }
 }
 
-// MARK: - Tests Helper
+/// MARK: - Tests Helper
 
 #if DEBUG
 extension RecurrenceEngine {

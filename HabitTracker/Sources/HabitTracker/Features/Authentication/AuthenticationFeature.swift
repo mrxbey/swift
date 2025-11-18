@@ -8,7 +8,7 @@ import AuthenticationServices
 @Reducer
 public struct AuthenticationFeature {
 
-    // MARK: - State
+    /// MARK: - State
 
     @ObservableState
     public struct State: Equatable {
@@ -68,7 +68,7 @@ public struct AuthenticationFeature {
         public init() {}
     }
 
-    // MARK: - Action
+    /// MARK: - Action
 
     public enum Action: Sendable {
         // User inputs
@@ -94,18 +94,18 @@ public struct AuthenticationFeature {
         }
     }
 
-    // MARK: - Dependencies
+    /// MARK: - Dependencies
 
     @Dependency(\.authService) var authService
     @Dependency(\.continuousClock) var clock
 
-    // MARK: - Reducer
+    /// MARK: - Reducer
 
     public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
 
-            // MARK: User Inputs
+            /// MARK: User Inputs
 
             case let .emailChanged(email):
                 state.email = email
@@ -133,7 +133,7 @@ public struct AuthenticationFeature {
                 }
                 return .none
 
-            // MARK: Auth Actions
+            /// MARK: Auth Actions
 
             case .submitTapped:
                 guard state.canSubmit else {
@@ -203,7 +203,7 @@ public struct AuthenticationFeature {
                     return .none
                 }
 
-            // MARK: Responses
+            /// MARK: Responses
 
             case let .authResponse(.success(session)):
                 state.isLoading = false
@@ -239,7 +239,7 @@ public struct AuthenticationFeature {
                 }
                 return .none
 
-            // MARK: Delegate
+            /// MARK: Delegate
 
             case .delegate:
                 return .none
@@ -248,7 +248,7 @@ public struct AuthenticationFeature {
     }
 }
 
-// MARK: - Dependency Key
+/// MARK: - Dependency Key
 
 extension DependencyValues {
     public var authService: AuthService {

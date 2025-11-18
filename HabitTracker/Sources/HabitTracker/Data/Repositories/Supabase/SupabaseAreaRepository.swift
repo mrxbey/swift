@@ -11,7 +11,7 @@ public actor SupabaseAreaRepository: AreaRepository {
     private let networkMonitor: NetworkMonitor
     private let syncEngine: SyncEngine
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init(
         client: SupabaseClient,
@@ -26,9 +26,11 @@ public actor SupabaseAreaRepository: AreaRepository {
     }
 
     /// Convenience initializer using shared service and dependencies
-    public init() async {
+    ///
+    /// - Throws: CacheService initialization errors (disk full, permissions, etc.)
+    public init() async throws {
         self.client = await SupabaseService.shared.getClient()
-        let sharedCache = try! CacheService()
+        let sharedCache = try CacheService()
         self.cacheService = sharedCache
         self.networkMonitor = NetworkMonitor()
         self.syncEngine = SyncEngine(
@@ -37,7 +39,7 @@ public actor SupabaseAreaRepository: AreaRepository {
         )
     }
 
-    // MARK: - AreaRepository Implementation
+    /// MARK: - AreaRepository Implementation
 
     public func fetchAll() async throws -> [Area] {
         guard let userId = await client.auth.currentUser?.id else {
@@ -358,7 +360,7 @@ public actor SupabaseAreaRepository: AreaRepository {
     }
 }
 
-// MARK: - Date Extension
+/// MARK: - Date Extension
 
 private extension Date {
     var iso8601String: String {

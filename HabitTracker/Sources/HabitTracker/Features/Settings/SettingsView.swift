@@ -130,7 +130,7 @@ struct SettingsView: View {
     }
 }
 
-// MARK: - SettingsFeature
+/// MARK: - SettingsFeature
 
 @Reducer
 struct SettingsFeature {
@@ -242,7 +242,7 @@ struct SettingsFeature {
     }
 }
 
-// MARK: - Preview
+/// MARK: - Preview
 
 #if DEBUG
 #Preview {

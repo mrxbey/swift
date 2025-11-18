@@ -51,7 +51,7 @@ public protocol AreaRepository: Sendable {
     func fetchStatistics(for id: UUID) async throws -> AreaStatistics
 }
 
-// MARK: - AreaStatistics
+/// MARK: - AreaStatistics
 
 /// Statistics for an area
 public struct AreaStatistics: Codable, Sendable, Equatable {

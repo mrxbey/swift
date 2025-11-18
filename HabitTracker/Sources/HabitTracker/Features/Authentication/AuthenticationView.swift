@@ -65,7 +65,7 @@ public struct AuthenticationView: View {
         .background(backgroundColor)
     }
 
-    // MARK: - Header
+    /// MARK: - Header
 
     private var headerSection: some View {
         VStack(spacing: 12) {
@@ -95,7 +95,7 @@ public struct AuthenticationView: View {
         }
     }
 
-    // MARK: - Sign in with Apple
+    /// MARK: - Sign in with Apple
 
     private var signInWithAppleButton: some View {
         SignInWithAppleButton(
@@ -127,7 +127,7 @@ public struct AuthenticationView: View {
         .cornerRadius(8)
     }
 
-    // MARK: - Email Form
+    /// MARK: - Email Form
 
     private var emailFormSection: some View {
         VStack(spacing: 16) {
@@ -202,7 +202,7 @@ public struct AuthenticationView: View {
         }
     }
 
-    // MARK: - Submit Button
+    /// MARK: - Submit Button
 
     private var submitButton: some View {
         Button {
@@ -226,7 +226,7 @@ public struct AuthenticationView: View {
         .disabled(!store.canSubmit || store.isLoading)
     }
 
-    // MARK: - Mode Switcher
+    /// MARK: - Mode Switcher
 
     private var modeSwitcher: some View {
         VStack(spacing: 12) {
@@ -273,7 +273,7 @@ public struct AuthenticationView: View {
         }
     }
 
-    // MARK: - Helpers
+    /// MARK: - Helpers
 
     private func errorBanner(_ message: String) -> some View {
         HStack(spacing: 12) {
@@ -312,7 +312,7 @@ public struct AuthenticationView: View {
     }
 }
 
-// MARK: - Custom Text Field Style
+/// MARK: - Custom Text Field Style
 
 struct RoundedTextFieldStyle: TextFieldStyle {
     func _body(configuration: TextField<Self._Label>) -> some View {
@@ -327,7 +327,7 @@ struct RoundedTextFieldStyle: TextFieldStyle {
     }
 }
 
-// MARK: - Preview
+/// MARK: - Preview
 
 #if DEBUG
 #Preview("Sign In") {

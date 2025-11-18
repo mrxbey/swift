@@ -71,7 +71,7 @@ struct AreasView: View {
     }
 }
 
-// MARK: - AreaCard
+/// MARK: - AreaCard
 
 struct AreaCard: View {
     let area: Area
@@ -114,7 +114,7 @@ struct AreaCard: View {
     }
 }
 
-// MARK: - AreaEditorView
+/// MARK: - AreaEditorView
 
 struct AreaEditorView: View {
     @Bindable var store: StoreOf<AreaEditorFeature>
@@ -187,7 +187,7 @@ struct ColorButton: View {
     }
 }
 
-// MARK: - AreaDetailView
+/// MARK: - AreaDetailView
 
 struct AreaDetailView: View {
     @Bindable var store: StoreOf<AreaDetailFeature>
@@ -285,7 +285,7 @@ struct GoalRowSimple: View {
     }
 }
 
-// MARK: - Features
+/// MARK: - Features
 
 @Reducer
 struct AreasFeature {
@@ -440,7 +440,7 @@ struct AreaDetailFeature {
     }
 }
 
-// MARK: - Preview
+/// MARK: - Preview
 
 #if DEBUG
 #Preview {

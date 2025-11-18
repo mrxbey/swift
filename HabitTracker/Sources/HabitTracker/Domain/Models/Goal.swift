@@ -18,7 +18,7 @@ public final class Goal: Identifiable, Codable, Sendable, Equatable, Hashable {
     public let createdAt: Date
     public var updatedAt: Date
 
-    // MARK: - Lifecycle
+    /// MARK: - Lifecycle
 
     public init(
         id: UUID = UUID(),
@@ -52,7 +52,7 @@ public final class Goal: Identifiable, Codable, Sendable, Equatable, Hashable {
         self.updatedAt = updatedAt
     }
 
-    // MARK: - Computed Properties
+    /// MARK: - Computed Properties
 
     public var displayName: String {
         if let emoji = emoji {
@@ -73,7 +73,7 @@ public final class Goal: Identifiable, Codable, Sendable, Equatable, Hashable {
         kind == .measure
     }
 
-    // MARK: - Equatable
+    /// MARK: - Equatable
 
     public static func == (lhs: Goal, rhs: Goal) -> Bool {
         lhs.id == rhs.id &&
@@ -84,14 +84,14 @@ public final class Goal: Identifiable, Codable, Sendable, Equatable, Hashable {
         lhs.timesPerDay == rhs.timesPerDay
     }
 
-    // MARK: - Hashable
+    /// MARK: - Hashable
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 }
 
-// MARK: - GoalKind
+/// MARK: - GoalKind
 
 public enum GoalKind: String, Codable, Sendable, CaseIterable {
     case habit      // Repeating habit
@@ -115,7 +115,7 @@ public enum GoalKind: String, Codable, Sendable, CaseIterable {
     }
 }
 
-// MARK: - GoalStatus
+/// MARK: - GoalStatus
 
 public enum GoalStatus: String, Codable, Sendable, CaseIterable {
     case active
@@ -137,7 +137,7 @@ public enum GoalStatus: String, Codable, Sendable, CaseIterable {
     }
 }
 
-// MARK: - LinkedExercise
+/// MARK: - LinkedExercise
 
 public enum LinkedExercise: String, Codable, Sendable, CaseIterable {
     case meditation
@@ -189,7 +189,7 @@ public enum LinkedExercise: String, Codable, Sendable, CaseIterable {
     }
 }
 
-// MARK: - Mock Data
+/// MARK: - Mock Data
 
 #if DEBUG
 extension Goal {

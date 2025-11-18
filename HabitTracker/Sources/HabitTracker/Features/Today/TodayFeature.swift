@@ -5,7 +5,7 @@ import Foundation
 @Reducer
 public struct TodayFeature {
 
-    // MARK: - State
+    /// MARK: - State
 
     @ObservableState
     public struct State: Equatable {
@@ -46,7 +46,7 @@ public struct TodayFeature {
         public init() {}
     }
 
-    // MARK: - Action
+    /// MARK: - Action
 
     public enum Action: Sendable {
         // Lifecycle
@@ -80,7 +80,7 @@ public struct TodayFeature {
         case skipResponse(UUID, TaskResult<Void>)
     }
 
-    // MARK: - Dependencies
+    /// MARK: - Dependencies
 
     @Dependency(\.occurrenceRepository) var occurrenceRepository
     @Dependency(\.goalRepository) var goalRepository
@@ -89,13 +89,13 @@ public struct TodayFeature {
     @Dependency(\.date.now) var now
     @Dependency(\.calendar) var calendar
 
-    // MARK: - Reducer
+    /// MARK: - Reducer
 
     public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
 
-            // MARK: Lifecycle
+            /// MARK: Lifecycle
 
             case .task:
                 state.isLoading = true
@@ -119,7 +119,7 @@ public struct TodayFeature {
             case .refresh:
                 return Effect.send(.task)
 
-            // MARK: Data Responses
+            /// MARK: Data Responses
 
             case let .occurrencesResponse(.success(occurrences)):
                 state.occurrences = IdentifiedArray(uniqueElements: occurrences)
@@ -154,7 +154,7 @@ public struct TodayFeature {
                 // Silent failure for water progress
                 return .none
 
-            // MARK: User Interactions
+            /// MARK: User Interactions
 
             case let .occurrenceTapped(id):
                 guard let occurrence = state.occurrences[id: id] else {
@@ -212,7 +212,7 @@ public struct TodayFeature {
                 // Could show goal detail or quick-add
                 return .none
 
-            // MARK: Water Tracking
+            /// MARK: Water Tracking
 
             case let .addWaterMeasurement(amount):
                 guard let waterGoal = state.waterGoal else {
@@ -229,7 +229,7 @@ public struct TodayFeature {
                     await send(.refresh)
                 }
 
-            // MARK: Child Features
+            /// MARK: Child Features
 
             case .goalEditor(.presented(.delegate(.goalSaved))):
                 state.goalEditor = nil
@@ -250,14 +250,14 @@ public struct TodayFeature {
         }
     }
 
-    // MARK: - Cancel IDs
+    /// MARK: - Cancel IDs
 
     private enum CancelID {
         case refresh
     }
 }
 
-// MARK: - Supporting Types
+/// MARK: - Supporting Types
 
 public struct WaterProgress: Equatable, Sendable {
     public var goalId: UUID
@@ -293,7 +293,7 @@ public enum UnitKind: String, Codable, Sendable {
     }
 }
 
-// MARK: - Placeholder Features (to be implemented)
+/// MARK: - Placeholder Features (to be implemented)
 
 @Reducer
 public struct GoalEditorFeature {

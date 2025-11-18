@@ -32,7 +32,7 @@ public final class Area: Identifiable, Codable, Sendable, Equatable, Hashable {
         self.updatedAt = updatedAt
     }
 
-    // MARK: - Equatable
+    /// MARK: - Equatable
 
     public static func == (lhs: Area, rhs: Area) -> Bool {
         lhs.id == rhs.id &&
@@ -42,14 +42,14 @@ public final class Area: Identifiable, Codable, Sendable, Equatable, Hashable {
         lhs.status == rhs.status
     }
 
-    // MARK: - Hashable
+    /// MARK: - Hashable
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 }
 
-// MARK: - AreaStatus
+/// MARK: - AreaStatus
 
 public enum AreaStatus: String, Codable, Sendable, CaseIterable {
     case active
@@ -71,7 +71,7 @@ public enum AreaStatus: String, Codable, Sendable, CaseIterable {
     }
 }
 
-// MARK: - Mock Data (for previews and testing)
+/// MARK: - Mock Data (for previews and testing)
 
 #if DEBUG
 extension Area {

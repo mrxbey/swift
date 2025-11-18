@@ -72,7 +72,7 @@ public protocol GoalRepository: Sendable {
     func fetchMostCompleted(limit: Int, days: Int) async throws -> [GoalWithStats]
 }
 
-// MARK: - GoalWithStats
+/// MARK: - GoalWithStats
 
 /// A goal with completion statistics
 public struct GoalWithStats: Codable, Sendable, Equatable {

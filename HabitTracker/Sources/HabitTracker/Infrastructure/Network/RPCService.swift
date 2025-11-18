@@ -8,7 +8,7 @@ import Supabase
 public actor RPCService {
     private let client: SupabaseClient
 
-    // MARK: - Initialization
+    /// MARK: - Initialization
 
     public init(client: SupabaseClient) {
         self.client = client
@@ -18,7 +18,7 @@ public actor RPCService {
         self.client = SupabaseService.shared.getClient()
     }
 
-    // MARK: - Occurrence RPCs
+    /// MARK: - Occurrence RPCs
 
     /// Completes a tick for an occurrence
     ///
@@ -118,7 +118,7 @@ public actor RPCService {
         return response.toDomain
     }
 
-    // MARK: - Measurement RPCs
+    /// MARK: - Measurement RPCs
 
     /// Sets or updates a measure target for a goal
     ///
@@ -244,7 +244,7 @@ public actor RPCService {
         }
     }
 
-    // MARK: - Analytics RPCs
+    /// MARK: - Analytics RPCs
 
     /// Gets the current streak for the user
     ///
@@ -411,7 +411,7 @@ public actor RPCService {
     }
 }
 
-// MARK: - Date Extensions
+/// MARK: - Date Extensions
 
 private extension Date {
     func toDateOnlyString() -> String {
