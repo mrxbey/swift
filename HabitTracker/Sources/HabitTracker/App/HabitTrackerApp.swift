@@ -25,7 +25,12 @@ struct HabitTrackerApp: App {
 struct AppFeature {
     @ObservableState
     struct State: Equatable {
+        var authState: AuthState = .loading
         var selectedTab: Tab = .today
+
+        // Child features
+        var authentication: AuthenticationFeature.State?
+        var profileSetup: ProfileSetupFeature.State?
         var today = TodayFeature.State()
         var areas = AreasFeature.State()
         var insights = InsightsFeature.State()
@@ -33,8 +38,23 @@ struct AppFeature {
         var settings = SettingsFeature.State()
     }
 
+    enum AuthState: Equatable {
+        case loading
+        case unauthenticated
+        case authenticated(userId: UUID, needsProfileSetup: Bool)
+    }
+
     enum Action: Sendable {
+        // Lifecycle
+        case task
+        case authStateChecked(TaskResult<(User?, Profile?)>)
+
+        // Tab navigation
         case tabSelected(Tab)
+
+        // Child features
+        case authentication(AuthenticationFeature.Action)
+        case profileSetup(ProfileSetupFeature.Action)
         case today(TodayFeature.Action)
         case areas(AreasFeature.Action)
         case insights(InsightsFeature.Action)
@@ -66,7 +86,109 @@ struct AppFeature {
         }
     }
 
+    @Dependency(\.authService) var authService
+    @Dependency(\.supabaseClient) var supabaseClient
+
     var body: some ReducerOf<Self> {
+        Reduce { state, action in
+            switch action {
+
+            // MARK: Lifecycle
+
+            case .task:
+                return .run { send in
+                    await send(.authStateChecked(
+                        TaskResult {
+                            let user = await authService.currentUser()
+                            let profile: Profile? = if let user = user {
+                                try? await fetchProfile(userId: user.id)
+                            } else {
+                                nil
+                            }
+                            return (user, profile)
+                        }
+                    ))
+                }
+
+            case let .authStateChecked(.success((user, profile))):
+                if let user = user {
+                    if profile == nil {
+                        // User authenticated but needs profile setup
+                        state.authState = .authenticated(userId: user.id, needsProfileSetup: true)
+                        state.profileSetup = ProfileSetupFeature.State(userId: user.id)
+                    } else {
+                        // User authenticated and profile exists
+                        state.authState = .authenticated(userId: user.id, needsProfileSetup: false)
+                    }
+                } else {
+                    // User not authenticated
+                    state.authState = .unauthenticated
+                    state.authentication = AuthenticationFeature.State()
+                }
+                return .none
+
+            case .authStateChecked(.failure):
+                // Error checking auth state, assume unauthenticated
+                state.authState = .unauthenticated
+                state.authentication = AuthenticationFeature.State()
+                return .none
+
+            // MARK: Tab Navigation
+
+            case let .tabSelected(tab):
+                state.selectedTab = tab
+                return .none
+
+            // MARK: Authentication
+
+            case .authentication(.delegate(.authenticationSucceeded(let session))):
+                // Check if profile exists
+                return .run { send in
+                    await send(.authStateChecked(
+                        TaskResult {
+                            let profile = try? await fetchProfile(userId: session.user.id)
+                            return (session.user, profile)
+                        }
+                    ))
+                }
+
+            case .authentication:
+                return .none
+
+            // MARK: Profile Setup
+
+            case .profileSetup(.delegate(.profileSetupCompleted)):
+                // Profile setup completed, mark as authenticated
+                if case let .authenticated(userId, _) = state.authState {
+                    state.authState = .authenticated(userId: userId, needsProfileSetup: false)
+                    state.profileSetup = nil
+                }
+                return .none
+
+            case .profileSetup(.delegate(.profileSetupSkipped)):
+                // Profile setup skipped, still mark as authenticated
+                if case let .authenticated(userId, _) = state.authState {
+                    state.authState = .authenticated(userId: userId, needsProfileSetup: false)
+                    state.profileSetup = nil
+                }
+                return .none
+
+            case .profileSetup:
+                return .none
+
+            // MARK: Child Features
+
+            case .today, .areas, .insights, .programs, .settings:
+                return .none
+            }
+        }
+        .ifLet(\.authentication, action: \.authentication) {
+            AuthenticationFeature()
+        }
+        .ifLet(\.profileSetup, action: \.profileSetup) {
+            ProfileSetupFeature()
+        }
+
         Scope(state: \.today, action: \.today) {
             TodayFeature()
         }
@@ -82,17 +204,20 @@ struct AppFeature {
         Scope(state: \.settings, action: \.settings) {
             SettingsFeature()
         }
+    }
 
-        Reduce { state, action in
-            switch action {
-            case let .tabSelected(tab):
-                state.selectedTab = tab
-                return .none
+    // MARK: - Helper Methods
 
-            case .today, .areas, .insights, .programs, .settings:
-                return .none
-            }
-        }
+    private func fetchProfile(userId: UUID) async throws -> Profile {
+        let dto: ProfileDTO = try await supabaseClient
+            .from("profiles")
+            .select()
+            .eq("id", value: userId.uuidString)
+            .single()
+            .execute()
+            .value
+
+        return dto.toDomain
     }
 }
 
@@ -102,6 +227,50 @@ struct AppView: View {
     @Bindable var store: StoreOf<AppFeature>
 
     var body: some View {
+        Group {
+            switch store.authState {
+            case .loading:
+                loadingView
+
+            case .unauthenticated:
+                if let authenticationStore = store.scope(state: \.authentication, action: \.authentication) {
+                    AuthenticationView(store: authenticationStore)
+                }
+
+            case .authenticated(_, let needsProfileSetup):
+                if needsProfileSetup {
+                    if let profileSetupStore = store.scope(state: \.profileSetup, action: \.profileSetup) {
+                        ProfileSetupView(store: profileSetupStore)
+                    }
+                } else {
+                    mainTabView
+                }
+            }
+        }
+        .task {
+            await store.send(.task).finish()
+        }
+    }
+
+    // MARK: - Loading View
+
+    private var loadingView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 64))
+                .foregroundStyle(.blue.gradient)
+
+            Text("HabitTracker")
+                .font(.system(.largeTitle, design: .rounded, weight: .bold))
+
+            ProgressView()
+                .tint(.blue)
+        }
+    }
+
+    // MARK: - Main Tab View
+
+    private var mainTabView: some View {
         TabView(selection: $store.selectedTab.sending(\.tabSelected)) {
             ForEach(AppFeature.Tab.allCases, id: \.self) { tab in
                 tabContent(for: tab)
