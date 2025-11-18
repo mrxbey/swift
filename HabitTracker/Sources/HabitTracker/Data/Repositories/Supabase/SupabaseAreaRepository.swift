@@ -28,10 +28,11 @@ public actor SupabaseAreaRepository: AreaRepository {
     /// Convenience initializer using shared service and dependencies
     public init() async {
         self.client = await SupabaseService.shared.getClient()
-        self.cacheService = try! CacheService()
+        let sharedCache = try! CacheService()
+        self.cacheService = sharedCache
         self.networkMonitor = NetworkMonitor()
         self.syncEngine = SyncEngine(
-            cacheService: try! CacheService(),
+            cacheService: sharedCache,
             supabaseClient: await SupabaseService.shared.getClient()
         )
     }
