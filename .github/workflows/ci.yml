@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop, 'claude/**' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint:
+    name: SwiftLint
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Run SwiftLint
+        run: swiftlint lint --strict --reporter github-actions-logging
+
+  test:
+    name: Test
+    runs-on: macos-14
+    strategy:
+      matrix:
+        platform: [iOS, macOS]
+        include:
+          - platform: iOS
+            destination: 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.0'
+          - platform: macOS
+            destination: 'platform=macOS'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.0.app
+
+      - name: Show Build Version
+        run: xcodebuild -version
+
+      - name: Build and Test (${{ matrix.platform }})
+        working-directory: HabitTracker
+        run: |
+          swift build -c release
+          swift test --parallel
+
+      - name: Upload Code Coverage
+        if: matrix.platform == 'iOS'
+        uses: codecov/codecov-action@v3
+        with:
+          files: .build/debug/codecov/*.profdata
+
+  build:
+    name: Build Archive
+    runs-on: macos-14
+    needs: [lint, test]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.0.app
+
+      - name: Build Release
+        working-directory: HabitTracker
+        run: swift build -c release
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: HabitTracker/.build/release/
+
+  security:
+    name: Security Scan
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Security Scan
+        run: |
+          echo "Checking for hardcoded secrets..."
+          ! grep -r "supabase.*anon.*key.*=" HabitTracker/Sources/ || exit 1
+          ! grep -r "api.*key.*=" HabitTracker/Sources/ || exit 1
+          echo "Security scan passed!"
+
+  migrations:
+    name: Validate Migrations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        run: |
+          curl -fsSL https://github.com/supabase/cli/releases/download/v1.123.4/supabase_1.123.4_linux_amd64.tar.gz | tar -xz
+          sudo mv supabase /usr/local/bin/
+
+      - name: Validate SQL Migrations
+        working-directory: HabitTracker/Supabase
+        run: |
+          # Check migrations are numbered correctly
+          ls migrations/*.sql | sort -V | cat -n | while read n f; do
+            expected=$(printf "%03d" $n)
+            actual=$(basename $f | cut -d_ -f1)
+            if [ "$expected" != "$actual" ]; then
+              echo "Migration numbering error: expected $expected, got $actual"
+              exit 1
+            fi
+          done
+          echo "Migration numbering is correct!"
+
+          # Validate SQL syntax
+          for file in migrations/*.sql; do
+            echo "Checking $file..."
+            # Basic syntax check
+            grep -q "CREATE\|ALTER\|DROP" "$file" || { echo "No DDL found in $file"; exit 1; }
+          done
+          echo "SQL validation passed!"

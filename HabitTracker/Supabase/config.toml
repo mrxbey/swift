@@ -1,0 +1,103 @@
+# Supabase Configuration
+# Project: HabitTracker
+
+[project]
+name = "habit-tracker"
+org_id = "your-org-id"
+project_id = "your-project-id"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+enabled = true
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[realtime]
+enabled = true
+port = 54323
+ip_version = "ipv4"
+
+[studio]
+enabled = true
+port = 54324
+api_url = "http://localhost"
+
+[inbucket]
+enabled = true
+port = 54325
+smtp_port = 54326
+pop3_port = 54327
+
+[storage]
+enabled = true
+port = 54328
+file_size_limit = "50MiB"
+
+[storage.buckets.program-images]
+public = true
+file_size_limit = "5MiB"
+allowed_mime_types = ["image/png", "image/jpeg", "image/jpg", "image/webp"]
+
+[storage.buckets.user-avatars]
+public = false
+file_size_limit = "2MiB"
+allowed_mime_types = ["image/png", "image/jpeg", "image/jpg"]
+
+[auth]
+enabled = true
+port = 54326
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://yourdomain.com"]
+jwt_expiry = 3600
+enable_signup = true
+enable_anonymous_sign_ins = false
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+
+[auth.external.apple]
+enabled = true
+client_id = "your-apple-client-id"
+secret = "env(APPLE_SECRET)"
+
+[edge_functions]
+enabled = true
+port = 54321
+
+[[edge_functions.functions]]
+name = "project-occurrences"
+verify_jwt = true
+
+[[edge_functions.functions]]
+name = "rollover"
+verify_jwt = false  # Cron job
+
+[[edge_functions.functions]]
+name = "refresh-summaries"
+verify_jwt = false  # Cron job
+
+[[edge_functions.functions]]
+name = "generate-recommendations"
+verify_jwt = false  # Cron job
+
+[analytics]
+enabled = true
+port = 54327
+
+[migrations]
+path = "./migrations"
