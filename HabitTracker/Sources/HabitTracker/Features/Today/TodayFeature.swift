@@ -58,6 +58,9 @@ public struct TodayFeature {
         case recommendationsResponse(TaskResult<[Goal]>)
         case waterProgressResponse(TaskResult<WaterProgress?>)
 
+        // Realtime
+        case realtimeOccurrenceEvent(OccurrenceEvent)
+
         // User interactions
         case occurrenceTapped(UUID)
         case completeTick(UUID)
@@ -82,6 +85,7 @@ public struct TodayFeature {
     @Dependency(\.occurrenceRepository) var occurrenceRepository
     @Dependency(\.goalRepository) var goalRepository
     @Dependency(\.measurementRepository) var measurementRepository
+    @Dependency(\.realtimeService) var realtimeService
     @Dependency(\.date.now) var now
     @Dependency(\.calendar) var calendar
 
