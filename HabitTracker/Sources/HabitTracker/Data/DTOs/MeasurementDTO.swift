@@ -39,7 +39,17 @@ public struct MeasurementDTO: Codable, Sendable, Equatable {
         self.goalId = measurement.goalId
         self.occurrenceId = measurement.occurrenceId
         self.value = measurement.value
-        self.unit = measurement.unit.rawValue
+
+        // Convert Swift unit to database unit (handle 'minutes' → 'min' legacy mapping)
+        let dbUnit: String
+        switch measurement.unit {
+        case .minutes:
+            dbUnit = "min"  // Database uses 'min' for backwards compatibility
+        default:
+            dbUnit = measurement.unit.rawValue
+        }
+        self.unit = dbUnit
+
         self.recordedAt = measurement.recordedAt
         self.createdAt = measurement.createdAt
         self.updatedAt = measurement.updatedAt
@@ -49,13 +59,21 @@ public struct MeasurementDTO: Codable, Sendable, Equatable {
 
     /// Converts the DTO to a domain model
     public var toDomain: Measurement {
-        Measurement(
+        // Convert database unit to Swift unit (handle 'min' → 'minutes' legacy mapping)
+        let swiftUnit: UnitKind
+        if unit == "min" {
+            swiftUnit = .minutes  // Database 'min' maps to Swift .minutes
+        } else {
+            swiftUnit = UnitKind(rawValue: unit) ?? .count
+        }
+
+        return Measurement(
             id: id,
             userId: userId,
             goalId: goalId,
             occurrenceId: occurrenceId,
             value: value,
-            unit: UnitKind(rawValue: unit) ?? .count,
+            unit: swiftUnit,
             recordedAt: recordedAt,
             createdAt: createdAt,
             updatedAt: updatedAt
@@ -97,7 +115,17 @@ public struct GoalMeasureTargetDTO: Codable, Sendable, Equatable {
         self.userId = target.userId
         self.goalId = target.goalId
         self.targetValue = target.targetValue
-        self.unit = target.unit.rawValue
+
+        // Convert Swift unit to database unit (handle 'minutes' → 'min' legacy mapping)
+        let dbUnit: String
+        switch target.unit {
+        case .minutes:
+            dbUnit = "min"  // Database uses 'min' for backwards compatibility
+        default:
+            dbUnit = target.unit.rawValue
+        }
+        self.unit = dbUnit
+
         self.effectiveFrom = target.effectiveFrom
         self.effectiveTo = target.effectiveTo
         self.createdAt = target.createdAt
@@ -105,12 +133,20 @@ public struct GoalMeasureTargetDTO: Codable, Sendable, Equatable {
     }
 
     public var toDomain: GoalMeasureTarget {
-        GoalMeasureTarget(
+        // Convert database unit to Swift unit (handle 'min' → 'minutes' legacy mapping)
+        let swiftUnit: UnitKind
+        if unit == "min" {
+            swiftUnit = .minutes  // Database 'min' maps to Swift .minutes
+        } else {
+            swiftUnit = UnitKind(rawValue: unit) ?? .count
+        }
+
+        return GoalMeasureTarget(
             id: id,
             userId: userId,
             goalId: goalId,
             targetValue: targetValue,
-            unit: UnitKind(rawValue: unit) ?? .count,
+            unit: swiftUnit,
             effectiveFrom: effectiveFrom,
             effectiveTo: effectiveTo,
             createdAt: createdAt,
