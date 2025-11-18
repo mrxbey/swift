@@ -98,13 +98,18 @@ public struct TodayFeature {
                 state.error = nil
 
                 return .run { [date = state.selectedDate] send in
-                    async let occurrences = try occurrenceRepository.fetchForDate(date)
-                    async let recommendations = try goalRepository.fetchRecommendations(for: date)
-                    async let waterProgress = try measurementRepository.fetchWaterProgress(for: date)
+                    // Fetch today's occurrences
+                    await send(.occurrencesResponse(
+                        TaskResult { try await occurrenceRepository.fetchOccurrences(for: date) }
+                    ))
 
-                    await send(.occurrencesResponse(TaskResult { try await occurrences }))
-                    await send(.recommendationsResponse(TaskResult { try await recommendations }))
-                    await send(.waterProgressResponse(TaskResult { try await waterProgress }))
+                    // Fetch recommendations (all active goals for now)
+                    await send(.recommendationsResponse(
+                        TaskResult { try await goalRepository.fetchAll() }
+                    ))
+
+                    // Water progress can be fetched if we have a water goal
+                    // For now, skip water progress until we identify the water goal
                 }
 
             case .refresh:
@@ -181,7 +186,7 @@ public struct TodayFeature {
                     await send(
                         .skipResponse(
                             id,
-                            TaskResult { try await occurrenceRepository.skip(id) }
+                            TaskResult { try await occurrenceRepository.skip(id, reason: nil) }
                         )
                     )
                 }
@@ -211,10 +216,11 @@ public struct TodayFeature {
                 }
 
                 return .run { send in
-                    try await measurementRepository.addMeasurement(
-                        goalId: waterGoal.id,
+                    _ = try await measurementRepository.addMeasurement(
+                        for: waterGoal.id,
                         value: amount,
-                        unit: .ml
+                        unit: .ml,
+                        occurrenceId: nil
                     )
                     await send(.refresh)
                 }
