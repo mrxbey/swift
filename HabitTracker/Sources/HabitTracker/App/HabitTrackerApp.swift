@@ -49,6 +49,11 @@ struct AppFeature {
         case task
         case authStateChecked(TaskResult<(User?, Profile?)>)
 
+        // Sync
+        case startBackgroundSync(userId: UUID)
+        case stopBackgroundSync
+        case manualSync
+
         // Tab navigation
         case tabSelected(Tab)
 
@@ -88,6 +93,7 @@ struct AppFeature {
 
     @Dependency(\.authService) var authService
     @Dependency(\.supabaseClient) var supabaseClient
+    @Dependency(\.syncCoordinator) var syncCoordinator
 
     var body: some ReducerOf<Self> {
         Reduce { state, action in
@@ -120,18 +126,44 @@ struct AppFeature {
                         // User authenticated and profile exists
                         state.authState = .authenticated(userId: user.id, needsProfileSetup: false)
                     }
+                    // Start background sync for authenticated users
+                    return .send(.startBackgroundSync(userId: user.id))
                 } else {
                     // User not authenticated
                     state.authState = .unauthenticated
                     state.authentication = AuthenticationFeature.State()
+                    // Stop background sync
+                    return .send(.stopBackgroundSync)
                 }
-                return .none
 
             case .authStateChecked(.failure):
                 // Error checking auth state, assume unauthenticated
                 state.authState = .unauthenticated
                 state.authentication = AuthenticationFeature.State()
-                return .none
+                return .send(.stopBackgroundSync)
+
+            // MARK: Sync
+
+            case let .startBackgroundSync(userId):
+                return .run { _ in
+                    await syncCoordinator.startBackgroundSync(userId: userId)
+                    // Perform initial sync
+                    await syncCoordinator.sync(userId: userId)
+                }
+
+            case .stopBackgroundSync:
+                return .run { _ in
+                    await syncCoordinator.stopBackgroundSync()
+                }
+
+            case .manualSync:
+                // Manual sync can be triggered from settings or pull-to-refresh
+                guard case let .authenticated(userId, _) = state.authState else {
+                    return .none
+                }
+                return .run { _ in
+                    await syncCoordinator.sync(userId: userId)
+                }
 
             // MARK: Tab Navigation
 
@@ -162,6 +194,8 @@ struct AppFeature {
                 if case let .authenticated(userId, _) = state.authState {
                     state.authState = .authenticated(userId: userId, needsProfileSetup: false)
                     state.profileSetup = nil
+                    // Start background sync now that profile is complete
+                    return .send(.startBackgroundSync(userId: userId))
                 }
                 return .none
 
@@ -170,6 +204,8 @@ struct AppFeature {
                 if case let .authenticated(userId, _) = state.authState {
                     state.authState = .authenticated(userId: userId, needsProfileSetup: false)
                     state.profileSetup = nil
+                    // Start background sync even if profile setup was skipped
+                    return .send(.startBackgroundSync(userId: userId))
                 }
                 return .none
 
