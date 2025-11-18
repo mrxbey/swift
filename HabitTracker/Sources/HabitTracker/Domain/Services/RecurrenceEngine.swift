@@ -186,7 +186,9 @@ public struct RecurrenceEngine: Sendable {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
 
-        let endDate = calendar.date(byAdding: .day, value: 14, to: today)!
+        guard let endDate = calendar.date(byAdding: .day, value: 14, to: today) else {
+            return []  // Return empty array if date calculation fails
+        }
 
         return generateOccurrences(
             for: schedule,
@@ -227,9 +229,15 @@ public enum DateRange {
         case .today:
             return calendar.startOfDay(for: now)
         case .week:
-            return calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now))!
+            guard let weekStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) else {
+                return calendar.startOfDay(for: now)  // Fallback to today if calculation fails
+            }
+            return weekStart
         case .month:
-            return calendar.date(from: calendar.dateComponents([.year, .month], from: now))!
+            guard let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) else {
+                return calendar.startOfDay(for: now)  // Fallback to today if calculation fails
+            }
+            return monthStart
         case .custom(let start, _):
             return start
         }
@@ -241,13 +249,22 @@ public enum DateRange {
 
         switch self {
         case .today:
-            return calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))!
+            guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) else {
+                return now  // Fallback to now if calculation fails
+            }
+            return endOfDay
         case .week:
-            let weekStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now))!
-            return calendar.date(byAdding: .day, value: 7, to: weekStart)!
+            guard let weekStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)),
+                  let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) else {
+                return now  // Fallback to now if calculation fails
+            }
+            return weekEnd
         case .month:
-            let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: now))!
-            return calendar.date(byAdding: .month, value: 1, to: monthStart)!
+            guard let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: now)),
+                  let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) else {
+                return now  // Fallback to now if calculation fails
+            }
+            return monthEnd
         case .custom(_, let end):
             return end
         }
@@ -276,11 +293,14 @@ extension RecurrenceEngine {
             byMonthday: monthdays
         )
 
-        let endDate = Calendar.current.date(byAdding: .day, value: days, to: Date())!
+        let now = Date()
+        guard let endDate = Calendar.current.date(byAdding: .day, value: days, to: now) else {
+            return []  // Return empty array if date calculation fails
+        }
 
         return engine.generateOccurrences(
             for: schedule,
-            from: Date(),
+            from: now,
             to: endDate,
             timeZone: .current
         )

@@ -247,7 +247,9 @@ public final class SyncEngine {
         let lastSync = lastSyncTimestamps["occurrences"] ?? Date.distantPast
 
         // Only sync recent occurrences (last 30 days)
-        let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
+        guard let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date()) else {
+            throw SyncError.dateCalculationFailed
+        }
 
         let dtos: [GoalOccurrenceDTO] = try await supabaseClient
             .from("goal_occurrences")
@@ -270,7 +272,9 @@ public final class SyncEngine {
         let lastSync = lastSyncTimestamps["measurements"] ?? Date.distantPast
 
         // Only sync recent measurements (last 90 days)
-        let ninetyDaysAgo = Calendar.current.date(byAdding: .day, value: -90, to: Date())!
+        guard let ninetyDaysAgo = Calendar.current.date(byAdding: .day, value: -90, to: Date()) else {
+            throw SyncError.dateCalculationFailed
+        }
 
         let dtos: [MeasurementDTO] = try await supabaseClient
             .from("measurements")
@@ -318,7 +322,9 @@ public final class SyncEngine {
     ///
     /// Keeps pending changes and recent data (last 30 days).
     public func clearOldCachedData() throws {
-        let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
+        guard let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date()) else {
+            throw SyncError.dateCalculationFailed
+        }
         try cacheService.clearSyncedData(olderThan: thirtyDaysAgo)
     }
 }
@@ -330,6 +336,7 @@ public enum SyncError: LocalizedError {
     case downloadFailed(String)
     case conflictResolutionFailed(String)
     case alreadySyncing
+    case dateCalculationFailed
 
     public var errorDescription: String? {
         switch self {
@@ -341,6 +348,8 @@ public enum SyncError: LocalizedError {
             return "Conflict resolution failed: \(message)"
         case .alreadySyncing:
             return "Sync already in progress"
+        case .dateCalculationFailed:
+            return "Date calculation failed - this should never happen"
         }
     }
 }

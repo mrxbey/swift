@@ -161,7 +161,9 @@ public final class CacheService: @unchecked Sendable {
     public func fetchOccurrences(userId: UUID, date: Date) throws -> [GoalOccurrence] {
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
+            throw CacheError.dateCalculationFailed
+        }
 
         let descriptor = FetchDescriptor<CachedOccurrence>(
             predicate: #Predicate { occurrence in
@@ -287,12 +289,12 @@ public final class CacheService: @unchecked Sendable {
     }
 
     public func clearSyncedData(olderThan date: Date) throws {
-        // Areas
+        // Areas - using nil coalescing to avoid force unwrap
+        // If lastSyncedAt is nil, it becomes .distantFuture which is always > date
         let areaDescriptor = FetchDescriptor<CachedArea>(
             predicate: #Predicate { area in
                 area.syncState == "synced" &&
-                area.lastSyncedAt != nil &&
-                area.lastSyncedAt! < date
+                (area.lastSyncedAt ?? .distantFuture) < date
             }
         )
         let oldAreas = try modelContext.fetch(areaDescriptor)
@@ -302,8 +304,7 @@ public final class CacheService: @unchecked Sendable {
         let goalDescriptor = FetchDescriptor<CachedGoal>(
             predicate: #Predicate { goal in
                 goal.syncState == "synced" &&
-                goal.lastSyncedAt != nil &&
-                goal.lastSyncedAt! < date
+                (goal.lastSyncedAt ?? .distantFuture) < date
             }
         )
         let oldGoals = try modelContext.fetch(goalDescriptor)
@@ -313,8 +314,7 @@ public final class CacheService: @unchecked Sendable {
         let occurrenceDescriptor = FetchDescriptor<CachedOccurrence>(
             predicate: #Predicate { occurrence in
                 occurrence.syncState == "synced" &&
-                occurrence.lastSyncedAt != nil &&
-                occurrence.lastSyncedAt! < date
+                (occurrence.lastSyncedAt ?? .distantFuture) < date
             }
         )
         let oldOccurrences = try modelContext.fetch(occurrenceDescriptor)
@@ -324,13 +324,25 @@ public final class CacheService: @unchecked Sendable {
         let measurementDescriptor = FetchDescriptor<CachedMeasurement>(
             predicate: #Predicate { measurement in
                 measurement.syncState == "synced" &&
-                measurement.lastSyncedAt != nil &&
-                measurement.lastSyncedAt! < date
+                (measurement.lastSyncedAt ?? .distantFuture) < date
             }
         )
         let oldMeasurements = try modelContext.fetch(measurementDescriptor)
         oldMeasurements.forEach { modelContext.delete($0) }
 
         try modelContext.save()
+    }
+}
+
+/// MARK: - CacheError
+
+public enum CacheError: LocalizedError {
+    case dateCalculationFailed
+
+    public var errorDescription: String? {
+        switch self {
+        case .dateCalculationFailed:
+            return "Date calculation failed - this should never happen"
+        }
     }
 }
