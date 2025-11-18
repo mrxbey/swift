@@ -70,8 +70,9 @@ public final class SyncEngine {
         let pending = try cacheService.fetchPendingAreas()
 
         for cached in pending {
+            let area = cached.toDomain()
+
             do {
-                let area = cached.toDomain()
                 let dto = AreaDTO(from: area)
 
                 // Upsert to Supabase
@@ -80,13 +81,11 @@ public final class SyncEngine {
                     .upsert(dto)
                     .execute()
 
-                // Mark as synced
-                cached.syncState = SyncState.synced.rawValue
-                cached.lastSyncedAt = Date()
+                // Update cache with synced state (let CacheService handle ModelContext)
                 try cacheService.saveArea(area, syncState: .synced)
             } catch {
-                // Mark as failed
-                cached.syncState = SyncState.failed.rawValue
+                // Update cache with failed state (let CacheService handle ModelContext)
+                try? cacheService.saveArea(area, syncState: .failed)
                 print("Failed to sync area \(cached.id): \(error)")
             }
         }
@@ -96,8 +95,9 @@ public final class SyncEngine {
         let pending = try cacheService.fetchPendingGoals()
 
         for cached in pending {
+            let goal = cached.toDomain()
+
             do {
-                let goal = cached.toDomain()
                 let dto = GoalDTO(from: goal)
 
                 try await supabaseClient
@@ -105,11 +105,11 @@ public final class SyncEngine {
                     .upsert(dto)
                     .execute()
 
-                cached.syncState = SyncState.synced.rawValue
-                cached.lastSyncedAt = Date()
+                // Update cache with synced state (let CacheService handle ModelContext)
                 try cacheService.saveGoal(goal, syncState: .synced)
             } catch {
-                cached.syncState = SyncState.failed.rawValue
+                // Update cache with failed state (let CacheService handle ModelContext)
+                try? cacheService.saveGoal(goal, syncState: .failed)
                 print("Failed to sync goal \(cached.id): \(error)")
             }
         }
@@ -119,8 +119,9 @@ public final class SyncEngine {
         let pending = try cacheService.fetchPendingOccurrences()
 
         for cached in pending {
+            let occurrence = cached.toDomain()
+
             do {
-                let occurrence = cached.toDomain()
                 let dto = GoalOccurrenceDTO(from: occurrence)
 
                 try await supabaseClient
@@ -128,11 +129,11 @@ public final class SyncEngine {
                     .upsert(dto)
                     .execute()
 
-                cached.syncState = SyncState.synced.rawValue
-                cached.lastSyncedAt = Date()
+                // Update cache with synced state (let CacheService handle ModelContext)
                 try cacheService.saveOccurrence(occurrence, syncState: .synced)
             } catch {
-                cached.syncState = SyncState.failed.rawValue
+                // Update cache with failed state (let CacheService handle ModelContext)
+                try? cacheService.saveOccurrence(occurrence, syncState: .failed)
                 print("Failed to sync occurrence \(cached.id): \(error)")
             }
         }
@@ -142,8 +143,9 @@ public final class SyncEngine {
         let pending = try cacheService.fetchPendingMeasurements()
 
         for cached in pending {
+            let measurement = cached.toDomain()
+
             do {
-                let measurement = cached.toDomain()
                 let dto = MeasurementDTO(from: measurement)
 
                 try await supabaseClient
@@ -151,11 +153,11 @@ public final class SyncEngine {
                     .upsert(dto)
                     .execute()
 
-                cached.syncState = SyncState.synced.rawValue
-                cached.lastSyncedAt = Date()
+                // Update cache with synced state (let CacheService handle ModelContext)
                 try cacheService.saveMeasurement(measurement, syncState: .synced)
             } catch {
-                cached.syncState = SyncState.failed.rawValue
+                // Update cache with failed state (let CacheService handle ModelContext)
+                try? cacheService.saveMeasurement(measurement, syncState: .failed)
                 print("Failed to sync measurement \(cached.id): \(error)")
             }
         }
