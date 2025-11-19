@@ -174,8 +174,18 @@ public struct TodayFeature {
                 }
 
             case let .completeTickResponse(id, .success):
-                // Optimistically update UI
-                state.occurrences[id: id]?.incrementCompletion()
+                // Optimistically update UI - using value semantics for TCA
+                if var occurrence = state.occurrences[id: id] {
+                    // Increment completion count
+                    if occurrence.completedCount < occurrence.targetCount {
+                        occurrence.completedCount += 1
+                        if occurrence.completedCount >= occurrence.targetCount {
+                            occurrence.status = .completed
+                        }
+                    }
+                    // Assign modified copy back
+                    state.occurrences[id: id] = occurrence
+                }
 
                 // Refresh to get server state
                 return Effect.send(.refresh)
@@ -196,7 +206,12 @@ public struct TodayFeature {
                 }
 
             case let .skipResponse(id, .success):
-                state.occurrences[id: id]?.markSkipped()
+                // Update occurrence status - using value semantics for TCA
+                if var occurrence = state.occurrences[id: id] {
+                    occurrence.status = .skipped
+                    // Assign modified copy back
+                    state.occurrences[id: id] = occurrence
+                }
                 return Effect.send(.refresh)
                     .debounce(id: CancelID.refresh, for: 0.5, scheduler: DispatchQueue.main)
 

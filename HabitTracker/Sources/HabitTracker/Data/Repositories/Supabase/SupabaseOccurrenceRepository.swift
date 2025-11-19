@@ -57,9 +57,14 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
         if !cached.isEmpty {
             // If online, sync first to ensure fresh data
             if await networkMonitor.isConnected() {
-                try? await syncEngine.performFullSync(userId: userId)
-                // Return fresh data from cache after sync
-                return                     try cacheService.fetchOccurrences(userId: userId, date: date)
+                do {
+                    try await syncEngine.performFullSync(userId: userId)
+                } catch {
+                    // Log sync error but continue with cached data
+                    print("⚠️ [SupabaseOccurrenceRepository] Sync failed in fetchOccurrences: \(error.localizedDescription)")
+                }
+                // Return fresh data from cache after sync (or cached data if sync failed)
+                return try cacheService.fetchOccurrences(userId: userId, date: date)
             }
             // Offline: return cached data
             return cached
@@ -139,7 +144,11 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
             // Trigger background sync
             Task {
                 if await networkMonitor.isConnected() {
-                    try? await syncEngine.performFullSync(userId: userId)
+                    do {
+                        try await syncEngine.performFullSync(userId: userId)
+                    } catch {
+                        print("⚠️ [SupabaseOccurrenceRepository] Background sync failed in fetch: \(error.localizedDescription)")
+                    }
                 }
             }
             return cached
@@ -282,8 +291,12 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
                 .execute()
 
             // Update cache with latest state
-            if let updated = try? await fetchOccurrenceFromSupabase(id, userId: userId) {
-                                    try cacheService.saveOccurrence(updated, syncState: .synced)
+            do {
+                let updated = try await fetchOccurrenceFromSupabase(id, userId: userId)
+                try cacheService.saveOccurrence(updated, syncState: .synced)
+            } catch {
+                print("⚠️ [SupabaseOccurrenceRepository] Failed to refresh cache after RPC: \(error.localizedDescription)")
+                // Cache will be updated on next sync
             }
         } catch let error as PostgrestError {
             throw SupabaseError.from(error)
@@ -313,8 +326,12 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
                 .execute()
 
             // Update cache with latest state
-            if let updated = try? await fetchOccurrenceFromSupabase(id, userId: userId) {
-                                    try cacheService.saveOccurrence(updated, syncState: .synced)
+            do {
+                let updated = try await fetchOccurrenceFromSupabase(id, userId: userId)
+                try cacheService.saveOccurrence(updated, syncState: .synced)
+            } catch {
+                print("⚠️ [SupabaseOccurrenceRepository] Failed to refresh cache after RPC: \(error.localizedDescription)")
+                // Cache will be updated on next sync
             }
         } catch let error as PostgrestError {
             throw SupabaseError.from(error)
@@ -339,8 +356,12 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
                 .execute()
 
             // Update cache with latest state
-            if let updated = try? await fetchOccurrenceFromSupabase(id, userId: userId) {
-                                    try cacheService.saveOccurrence(updated, syncState: .synced)
+            do {
+                let updated = try await fetchOccurrenceFromSupabase(id, userId: userId)
+                try cacheService.saveOccurrence(updated, syncState: .synced)
+            } catch {
+                print("⚠️ [SupabaseOccurrenceRepository] Failed to refresh cache after RPC: \(error.localizedDescription)")
+                // Cache will be updated on next sync
             }
         } catch let error as PostgrestError {
             throw SupabaseError.from(error)

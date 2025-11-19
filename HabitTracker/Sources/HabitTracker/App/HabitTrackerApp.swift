@@ -340,49 +340,12 @@ struct AppView: View {
     }
 }
 
-/// MARK: - Placeholder Features
-
-@Reducer
-struct AreasFeature {
-    @ObservableState
-    struct State: Equatable {}
-    enum Action: Sendable {}
-    var body: some ReducerOf<Self> {
-        Reduce { state, action in .none }
-    }
-}
-
-@Reducer
-struct InsightsFeature {
-    @ObservableState
-    struct State: Equatable {}
-    enum Action: Sendable {}
-    var body: some ReducerOf<Self> {
-        Reduce { state, action in .none }
-    }
-}
-
-@Reducer
-struct ProgramsFeature {
-    @ObservableState
-    struct State: Equatable {}
-    enum Action: Sendable {}
-    var body: some ReducerOf<Self> {
-        Reduce { state, action in .none }
-    }
-}
-
-@Reducer
-struct SettingsFeature {
-    @ObservableState
-    struct State: Equatable {}
-    enum Action: Sendable {}
-    var body: some ReducerOf<Self> {
-        Reduce { state, action in .none }
-    }
-}
-
 /// MARK: - Preview
+// Note: Placeholder reducers removed - actual implementations exist in:
+// - AreasFeature: Features/Areas/AreasView.swift
+// - InsightsFeature: Features/Insights/InsightsView.swift
+// - ProgramsFeature: Features/Programs/ProgramsView.swift
+// - SettingsFeature: Features/Settings/SettingsView.swift
 
 #if DEBUG
 #Preview {
