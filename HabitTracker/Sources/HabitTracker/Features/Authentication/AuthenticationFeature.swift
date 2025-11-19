@@ -32,7 +32,20 @@ public struct AuthenticationFeature {
         }
 
         public var isPasswordValid: Bool {
-            password.count >= 6
+            // Match server-side validation (AuthService.swift lines 220-236)
+            guard password.count >= 8 else { return false }
+            guard password.rangeOfCharacter(from: .uppercaseLetters) != nil else { return false }
+            guard password.rangeOfCharacter(from: .lowercaseLetters) != nil else { return false }
+            guard password.rangeOfCharacter(from: .decimalDigits) != nil else { return false }
+
+            // Check common weak passwords
+            let commonPasswords = ["password", "12345678", "qwerty123", "password1"]
+            let lowercasePassword = password.lowercased()
+            if commonPasswords.contains(lowercasePassword) {
+                return false
+            }
+
+            return true
         }
 
         public var doPasswordsMatch: Bool {

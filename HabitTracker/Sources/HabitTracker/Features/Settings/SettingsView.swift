@@ -6,6 +6,14 @@
 import SwiftUI
 import ComposableArchitecture
 
+/// External links configuration
+/// Note: Update these URLs with actual production URLs before release
+private enum ExternalLinks {
+    static let privacyPolicy = URL(string: "https://example.com/privacy")
+    static let termsOfService = URL(string: "https://example.com/terms")
+    static let support = URL(string: "https://example.com/support")
+}
+
 struct SettingsView: View {
     @Bindable var store: StoreOf<SettingsFeature>
 
@@ -93,9 +101,15 @@ struct SettingsView: View {
 
                 // About section
                 Section("About") {
-                    Link("Privacy Policy", destination: URL(string: "https://example.com/privacy")!)
-                    Link("Terms of Service", destination: URL(string: "https://example.com/terms")!)
-                    Link("Support", destination: URL(string: "https://example.com/support")!)
+                    if let url = ExternalLinks.privacyPolicy {
+                        Link("Privacy Policy", destination: url)
+                    }
+                    if let url = ExternalLinks.termsOfService {
+                        Link("Terms of Service", destination: url)
+                    }
+                    if let url = ExternalLinks.support {
+                        Link("Support", destination: url)
+                    }
 
                     HStack {
                         Text("Version")
@@ -124,10 +138,15 @@ struct SettingsView: View {
 
     private var formattedSyncDate: String {
         guard let date = store.lastSyncDate else { return "Never" }
+        return Self.relativeDateFormatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    // Cached formatter to avoid creating new instance on every access
+    private static let relativeDateFormatter: RelativeDateTimeFormatter = {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
-    }
+        return formatter
+    }()
 }
 
 /// MARK: - SettingsFeature

@@ -5,8 +5,11 @@ import Supabase
 ///
 /// Implements delta sync using `updated_at` timestamps.
 /// Handles conflict resolution with last-write-wins strategy.
-@MainActor
-public final class SyncEngine {
+///
+/// NOTE: Converted from @MainActor class to actor for performance.
+/// Sync operations involve network/database work that should NOT block the main thread.
+/// Actor provides thread safety without forcing main thread execution.
+public actor SyncEngine {
     private let cacheService: CacheService
     private let supabaseClient: SupabaseClient
 

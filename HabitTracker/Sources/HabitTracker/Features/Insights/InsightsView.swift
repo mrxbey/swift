@@ -385,9 +385,12 @@ struct CompletionDataPoint: Identifiable, Equatable {
                 TopGoalItem(id: UUID(), rankNumber: 2, title: "Workout", emoji: "💪", completionCount: 24),
                 TopGoalItem(id: UUID(), rankNumber: 3, title: "Read", emoji: "📚", completionCount: 20)
             ],
-            completionData: (0..<7).map { days in
-                CompletionDataPoint(
-                    date: Calendar.current.date(byAdding: .day, value: -days, to: Date())!,
+            completionData: (0..<7).compactMap { days in
+                guard let date = Calendar.current.date(byAdding: .day, value: -days, to: Date()) else {
+                    return nil
+                }
+                return CompletionDataPoint(
+                    date: date,
                     completionRate: Double.random(in: 0.5...1.0)
                 )
             }.reversed()

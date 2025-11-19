@@ -426,8 +426,13 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
 private extension Date {
     /// Converts date to ISO 8601 date-only string (yyyy-MM-dd)
     func toDateOnlyString() -> String {
+        return Self.dateOnlyFormatter.string(from: self)
+    }
+
+    // Cached formatter to avoid creating new instance on every call
+    private static let dateOnlyFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withFullDate]
-        return formatter.string(from: self)
-    }
+        return formatter
+    }()
 }

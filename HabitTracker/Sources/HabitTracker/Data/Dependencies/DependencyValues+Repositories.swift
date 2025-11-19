@@ -124,54 +124,90 @@ private enum CacheServiceKey: DependencyKey {
         }
     }()
 
-    static let testValue: CacheService = try! CacheService()
+    static let testValue: CacheService = {
+        do {
+            return try CacheService()
+        } catch {
+            fatalError("Failed to initialize test CacheService: \(error)")
+        }
+    }()
 
-    static let previewValue: CacheService = try! CacheService()
+    static let previewValue: CacheService = {
+        do {
+            return try CacheService()
+        } catch {
+            fatalError("Failed to initialize preview CacheService: \(error)")
+        }
+    }()
 }
 
 private enum SyncEngineKey: DependencyKey {
     static let liveValue: SyncEngine = {
-        let cache = try! CacheService()
-        let client = SupabaseService.shared.getClient()
-        return SyncEngine(cacheService: cache, supabaseClient: client)
+        do {
+            let cache = try CacheService()
+            let client = SupabaseService.shared.getClient()
+            return SyncEngine(cacheService: cache, supabaseClient: client)
+        } catch {
+            fatalError("Failed to initialize SyncEngine: \(error)")
+        }
     }()
 
     static let testValue: SyncEngine = {
-        let cache = try! CacheService()
-        let client = SupabaseService.shared.getClient()
-        return SyncEngine(cacheService: cache, supabaseClient: client)
+        do {
+            let cache = try CacheService()
+            let client = SupabaseService.shared.getClient()
+            return SyncEngine(cacheService: cache, supabaseClient: client)
+        } catch {
+            fatalError("Failed to initialize test SyncEngine: \(error)")
+        }
     }()
 
     static let previewValue: SyncEngine = {
-        let cache = try! CacheService()
-        let client = SupabaseService.shared.getClient()
-        return SyncEngine(cacheService: cache, supabaseClient: client)
+        do {
+            let cache = try CacheService()
+            let client = SupabaseService.shared.getClient()
+            return SyncEngine(cacheService: cache, supabaseClient: client)
+        } catch {
+            fatalError("Failed to initialize preview SyncEngine: \(error)")
+        }
     }()
 }
 
 private enum SyncCoordinatorKey: DependencyKey {
     static let liveValue: SyncCoordinator = {
-        let cache = try! CacheService()
-        let client = SupabaseService.shared.getClient()
-        let engine = SyncEngine(cacheService: cache, supabaseClient: client)
-        let monitor = NetworkMonitor()
-        return SyncCoordinator(cacheService: cache, syncEngine: engine, networkMonitor: monitor)
+        do {
+            let cache = try CacheService()
+            let client = SupabaseService.shared.getClient()
+            let engine = SyncEngine(cacheService: cache, supabaseClient: client)
+            let monitor = NetworkMonitor()
+            return SyncCoordinator(cacheService: cache, syncEngine: engine, networkMonitor: monitor)
+        } catch {
+            fatalError("Failed to initialize SyncCoordinator: \(error)")
+        }
     }()
 
     static let testValue: SyncCoordinator = {
-        let cache = try! CacheService()
-        let client = SupabaseService.shared.getClient()
-        let engine = SyncEngine(cacheService: cache, supabaseClient: client)
-        let monitor = NetworkMonitor()
-        return SyncCoordinator(cacheService: cache, syncEngine: engine, networkMonitor: monitor)
+        do {
+            let cache = try CacheService()
+            let client = SupabaseService.shared.getClient()
+            let engine = SyncEngine(cacheService: cache, supabaseClient: client)
+            let monitor = NetworkMonitor()
+            return SyncCoordinator(cacheService: cache, syncEngine: engine, networkMonitor: monitor)
+        } catch {
+            fatalError("Failed to initialize test SyncCoordinator: \(error)")
+        }
     }()
 
     static let previewValue: SyncCoordinator = {
-        let cache = try! CacheService()
-        let client = SupabaseService.shared.getClient()
-        let engine = SyncEngine(cacheService: cache, supabaseClient: client)
-        let monitor = NetworkMonitor()
-        return SyncCoordinator(cacheService: cache, syncEngine: engine, networkMonitor: monitor)
+        do {
+            let cache = try CacheService()
+            let client = SupabaseService.shared.getClient()
+            let engine = SyncEngine(cacheService: cache, supabaseClient: client)
+            let monitor = NetworkMonitor()
+            return SyncCoordinator(cacheService: cache, syncEngine: engine, networkMonitor: monitor)
+        } catch {
+            fatalError("Failed to initialize preview SyncCoordinator: \(error)")
+        }
     }()
 }
 
