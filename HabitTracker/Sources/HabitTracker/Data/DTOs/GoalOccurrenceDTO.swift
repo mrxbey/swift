@@ -7,7 +7,6 @@ public struct GoalOccurrenceDTO: Codable, Sendable, Equatable {
     public let id: UUID
     public let userId: UUID
     public let goalId: UUID
-    public let scheduleId: UUID?
     public let scheduledDate: Date
     public let dueAt: Date?
     public let targetCount: Int
@@ -29,7 +28,6 @@ public struct GoalOccurrenceDTO: Codable, Sendable, Equatable {
         case id
         case userId = "user_id"
         case goalId = "goal_id"
-        case scheduleId = "schedule_id"
         case scheduledDate = "scheduled_date"
         case dueAt = "due_at"
         case targetCount = "target_count"
@@ -55,7 +53,6 @@ public struct GoalOccurrenceDTO: Codable, Sendable, Equatable {
         self.id = occurrence.id
         self.userId = occurrence.userId
         self.goalId = occurrence.goalId
-        self.scheduleId = nil // Will be set by database
         self.scheduledDate = occurrence.scheduledDate
         self.dueAt = occurrence.dueAt
         self.targetCount = occurrence.targetCount

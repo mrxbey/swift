@@ -278,7 +278,7 @@ public struct WaterProgress: Equatable, Sendable {
     public var goalId: UUID
     public var consumed: Double
     public var target: Double
-    public var unit: UnitKind
+    public var unit: Measurement.UnitKind  // Use domain model UnitKind
 
     public var progress: Double {
         guard target > 0 else { return 0 }
@@ -291,20 +291,6 @@ public struct WaterProgress: Equatable, Sendable {
 
     public var remaining: Double {
         max(target - consumed, 0)
-    }
-}
-
-public enum UnitKind: String, Codable, Sendable {
-    case ml, l, oz, count, min
-
-    public var displayName: String {
-        switch self {
-        case .ml: return "ml"
-        case .l: return "L"
-        case .oz: return "oz"
-        case .count: return "count"
-        case .min: return "min"
-        }
     }
 }
 
