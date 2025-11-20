@@ -28,6 +28,18 @@ extension DependencyValues {
         set { self[MeasurementRepositoryKey.self] = newValue }
     }
 
+    /// Repository for managing Reflection entities
+    public var reflectionRepository: ReflectionRepository {
+        get { self[ReflectionRepositoryKey.self] }
+        set { self[ReflectionRepositoryKey.self] = newValue }
+    }
+
+    /// Repository for managing Program entities
+    public var programRepository: ProgramRepository {
+        get { self[ProgramRepositoryKey.self] }
+        set { self[ProgramRepositoryKey.self] = newValue }
+    }
+
     /// Service for calling Supabase RPCs
     public var rpcService: RPCService {
         get { self[RPCServiceKey.self] }
@@ -97,6 +109,26 @@ private enum MeasurementRepositoryKey: DependencyKey {
     static let testValue: MeasurementRepository = MockMeasurementRepository()
 
     static let previewValue: MeasurementRepository = MockMeasurementRepository()
+}
+
+private enum ReflectionRepositoryKey: DependencyKey {
+    // Note: Cannot use async init in static property, so we create mock for now
+    // In production, inject properly initialized repository
+    static let liveValue: ReflectionRepository = MockReflectionRepository()
+
+    static let testValue: ReflectionRepository = MockReflectionRepository()
+
+    static let previewValue: ReflectionRepository = MockReflectionRepository()
+}
+
+private enum ProgramRepositoryKey: DependencyKey {
+    // Note: Cannot use async init in static property, so we create mock for now
+    // In production, inject properly initialized repository
+    static let liveValue: ProgramRepository = MockProgramRepository()
+
+    static let testValue: ProgramRepository = MockProgramRepository()
+
+    static let previewValue: ProgramRepository = MockProgramRepository()
 }
 
 private enum RPCServiceKey: DependencyKey {
@@ -513,5 +545,192 @@ public actor MockMeasurementRepository: MeasurementRepository {
             createdAt: Date(),
             updatedAt: Date()
         )
+    }
+}
+
+/// Mock implementation of ReflectionRepository for testing and previews
+public actor MockReflectionRepository: ReflectionRepository {
+    private var reflections: [UUID: Reflection] = [:]
+
+    public init() {}
+
+    public func fetchAll() async throws -> [Reflection] {
+        Array(reflections.values).sorted { $0.reflectionDate > $1.reflectionDate }
+    }
+
+    public func fetchReflections(for goalId: UUID) async throws -> [Reflection] {
+        reflections.values.filter { $0.goalId == goalId }.sorted { $0.reflectionDate > $1.reflectionDate }
+    }
+
+    public func fetchReflections(forArea areaId: UUID) async throws -> [Reflection] {
+        reflections.values.filter { $0.areaId == areaId }.sorted { $0.reflectionDate > $1.reflectionDate }
+    }
+
+    public func fetchReflections(from startDate: Date, to endDate: Date) async throws -> [Reflection] {
+        reflections.values.filter {
+            $0.reflectionDate >= startDate && $0.reflectionDate <= endDate
+        }.sorted { $0.reflectionDate > $1.reflectionDate }
+    }
+
+    public func fetchReflections(withMood mood: ReflectionMood) async throws -> [Reflection] {
+        reflections.values.filter { $0.mood == mood }.sorted { $0.reflectionDate > $1.reflectionDate }
+    }
+
+    public func fetchReflections(withTag tag: String) async throws -> [Reflection] {
+        reflections.values.filter { $0.tags.contains(tag) }.sorted { $0.reflectionDate > $1.reflectionDate }
+    }
+
+    public func fetch(_ id: UUID) async throws -> Reflection {
+        guard let reflection = reflections[id] else {
+            throw SupabaseError.notFound
+        }
+        return reflection
+    }
+
+    public func create(_ reflection: Reflection) async throws -> Reflection {
+        reflections[reflection.id] = reflection
+        return reflection
+    }
+
+    public func update(_ reflection: Reflection) async throws {
+        reflections[reflection.id] = reflection
+    }
+
+    public func delete(id: UUID) async throws {
+        reflections.removeValue(forKey: id)
+    }
+
+    public func search(query: String) async throws -> [Reflection] {
+        reflections.values.filter {
+            $0.content.localizedCaseInsensitiveContains(query)
+        }.sorted { $0.reflectionDate > $1.reflectionDate }
+    }
+}
+
+/// Mock implementation of ProgramRepository for testing and previews
+public actor MockProgramRepository: ProgramRepository {
+    private var programs: [UUID: Program] = [:]
+    private var programGoals: [UUID: [ProgramGoal]] = [:]
+
+    public init() {
+        // Add some sample programs for testing
+        let sampleProgram = Program(
+            id: UUID(),
+            title: "Morning Routine",
+            description: "Start your day right with these essential habits",
+            emoji: "☀️",
+            imageURL: nil,
+            category: .productivity,
+            difficulty: .beginner,
+            durationDays: 21,
+            tags: ["morning", "routine", "productivity"],
+            authorName: "HabitTracker Team",
+            isOfficial: true,
+            isPublished: true
+        )
+        programs[sampleProgram.id] = sampleProgram
+
+        // Add sample goals for this program
+        programGoals[sampleProgram.id] = [
+            ProgramGoal(
+                id: UUID(),
+                programId: sampleProgram.id,
+                title: "Morning Meditation",
+                emoji: "🧘",
+                kind: "habit",
+                timesPerDay: 1,
+                schedulePattern: "daily",
+                orderIndex: 0
+            ),
+            ProgramGoal(
+                id: UUID(),
+                programId: sampleProgram.id,
+                title: "Drink Water",
+                emoji: "💧",
+                kind: "habit",
+                timesPerDay: 1,
+                schedulePattern: "daily",
+                orderIndex: 1
+            )
+        ]
+    }
+
+    public func fetchAll() async throws -> [Program] {
+        Array(programs.values).sorted { $0.createdAt > $1.createdAt }
+    }
+
+    public func fetchOfficialPrograms() async throws -> [Program] {
+        programs.values.filter { $0.isOfficial }.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    public func fetchPrograms(by category: ProgramCategory) async throws -> [Program] {
+        programs.values.filter { $0.category == category }.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    public func fetchPrograms(byDifficulty difficulty: ProgramDifficulty) async throws -> [Program] {
+        programs.values.filter { $0.difficulty == difficulty }.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    public func fetchPrograms(withTag tag: String) async throws -> [Program] {
+        programs.values.filter { $0.tags.contains(tag) }.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    public func fetch(_ id: UUID) async throws -> Program {
+        guard let program = programs[id] else {
+            throw SupabaseError.notFound
+        }
+        return program
+    }
+
+    public func fetchGoals(for programId: UUID) async throws -> [ProgramGoal] {
+        programGoals[programId] ?? []
+    }
+
+    public func adoptProgram(programId: UUID, areaId: UUID?) async throws -> [Goal] {
+        let goals = programGoals[programId] ?? []
+        return goals.map { programGoal in
+            Goal(
+                id: UUID(),
+                userId: UUID(),
+                areaId: areaId,
+                title: programGoal.title,
+                emoji: programGoal.emoji,
+                notes: "Adopted from program",
+                kind: .habit,
+                status: .active,
+                timesPerDay: programGoal.timesPerDay,
+                pointsPerCompletion: 10,
+                schedule: nil,
+                reminder: nil,
+                keepUntilCompleteRollover: false,
+                streakCount: 0,
+                totalCompleted: 0,
+                lastCompletedAt: nil,
+                isShared: false,
+                createdAt: Date(),
+                updatedAt: Date()
+            )
+        }
+    }
+
+    public func search(query: String) async throws -> [Program] {
+        programs.values.filter {
+            $0.title.localizedCaseInsensitiveContains(query) ||
+            $0.description.localizedCaseInsensitiveContains(query)
+        }.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    public func create(_ program: Program) async throws -> Program {
+        programs[program.id] = program
+        return program
+    }
+
+    public func update(_ program: Program) async throws {
+        programs[program.id] = program
+    }
+
+    public func delete(id: UUID) async throws {
+        programs.removeValue(forKey: id)
+        programGoals.removeValue(forKey: id)
     }
 }
