@@ -55,13 +55,14 @@ public protocol ProgramRepository: Sendable {
     /// Adopts a program, creating goals from the program's templates
     ///
     /// This creates actual goals for the user based on the program's goal templates.
+    /// All created goals will be organized in the specified area.
     ///
     /// - Parameters:
     ///   - programId: The UUID of the program to adopt
-    ///   - areaId: Optional area to organize the adopted goals in
+    ///   - areaId: Area to organize the adopted goals in (required)
     /// - Returns: Array of created goals
     /// - Throws: SupabaseError if the operation fails
-    func adoptProgram(programId: UUID, areaId: UUID?) async throws -> [Goal]
+    func adoptProgram(programId: UUID, areaId: UUID) async throws -> [Goal]
 
     /// Searches programs by title or description
     ///

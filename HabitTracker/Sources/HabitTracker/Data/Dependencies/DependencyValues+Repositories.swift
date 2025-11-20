@@ -686,7 +686,7 @@ public actor MockProgramRepository: ProgramRepository {
         programGoals[programId] ?? []
     }
 
-    public func adoptProgram(programId: UUID, areaId: UUID?) async throws -> [Goal] {
+    public func adoptProgram(programId: UUID, areaId: UUID) async throws -> [Goal] {
         let goals = programGoals[programId] ?? []
         return goals.map { programGoal in
             Goal(
@@ -695,18 +695,13 @@ public actor MockProgramRepository: ProgramRepository {
                 areaId: areaId,
                 title: programGoal.title,
                 emoji: programGoal.emoji,
-                notes: "Adopted from program",
                 kind: .habit,
                 status: .active,
+                keepUntilComplete: false,
                 timesPerDay: programGoal.timesPerDay,
                 pointsPerCompletion: 10,
-                schedule: nil,
-                reminder: nil,
-                keepUntilCompleteRollover: false,
-                streakCount: 0,
-                totalCompleted: 0,
-                lastCompletedAt: nil,
-                isShared: false,
+                linkedExerciseKey: nil,
+                hashtags: [],
                 createdAt: Date(),
                 updatedAt: Date()
             )

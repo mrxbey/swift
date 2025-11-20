@@ -161,7 +161,7 @@ public actor SupabaseProgramRepository: ProgramRepository {
         }
     }
 
-    public func adoptProgram(programId: UUID, areaId: UUID?) async throws -> [Goal] {
+    public func adoptProgram(programId: UUID, areaId: UUID) async throws -> [Goal] {
         guard let userId = await client.auth.currentUser?.id else {
             throw SupabaseError.unauthorized
         }
@@ -190,24 +190,20 @@ public actor SupabaseProgramRepository: ProgramRepository {
             }
 
             // Create a new goal from the template
+            // Note: areaId is required (database constraint: NOT NULL)
             let goal = Goal(
                 id: UUID(),
                 userId: userId,
                 areaId: areaId,
                 title: programGoal.title,
                 emoji: programGoal.emoji,
-                notes: "Adopted from program: \(program.title)",
                 kind: goalKind,
                 status: .active,
+                keepUntilComplete: false,
                 timesPerDay: programGoal.timesPerDay,
                 pointsPerCompletion: 10, // Default points
-                schedule: nil, // TODO: Parse schedule from schedulePattern
-                reminder: nil,
-                keepUntilCompleteRollover: false,
-                streakCount: 0,
-                totalCompleted: 0,
-                lastCompletedAt: nil,
-                isShared: false,
+                linkedExerciseKey: nil,
+                hashtags: [],
                 createdAt: Date(),
                 updatedAt: Date()
             )

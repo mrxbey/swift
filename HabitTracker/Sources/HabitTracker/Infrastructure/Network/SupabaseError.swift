@@ -18,6 +18,9 @@ public enum SupabaseError: LocalizedError, Equatable, Sendable {
     /// Row Level Security policy violation (permission denied)
     case rlsViolation
 
+    /// Forbidden - attempting to modify resource you don't own
+    case forbidden
+
     /// Requested resource not found
     case notFound
 
@@ -58,6 +61,9 @@ public enum SupabaseError: LocalizedError, Equatable, Sendable {
         case .rlsViolation:
             return "Permission denied. You don't have access to this resource."
 
+        case .forbidden:
+            return "You don't have permission to modify this resource"
+
         case .notFound:
             return "Resource not found"
 
@@ -97,6 +103,9 @@ public enum SupabaseError: LocalizedError, Equatable, Sendable {
 
         case .rlsViolation:
             return "Make sure you're signed in with the correct account"
+
+        case .forbidden:
+            return "Make sure you're signed in as the owner of this resource"
 
         case .notFound:
             return "The item may have been deleted or moved"
@@ -273,6 +282,7 @@ public enum SupabaseError: LocalizedError, Equatable, Sendable {
         switch (lhs, rhs) {
         case (.unauthorized, .unauthorized),
              (.rlsViolation, .rlsViolation),
+             (.forbidden, .forbidden),
              (.notFound, .notFound),
              (.timeout, .timeout):
             return true
