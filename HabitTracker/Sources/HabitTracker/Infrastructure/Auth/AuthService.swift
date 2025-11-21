@@ -15,8 +15,11 @@ public actor AuthService {
         self.client = client
     }
 
-    public init() {
-        self.client = SupabaseService.shared.getClient()
+    /// Convenience initializer using shared Supabase service
+    ///
+    /// - Throws: SupabaseError if client configuration is invalid
+    public init() async throws {
+        self.client = try await SupabaseService.shared.getClient()
     }
 
     /// MARK: - Session Management

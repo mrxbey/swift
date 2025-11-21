@@ -29,13 +29,13 @@ public actor SupabaseGoalRepository: GoalRepository {
     ///
     /// - Throws: CacheService initialization errors (disk full, permissions, etc.)
     public init() async throws {
-        self.client = await SupabaseService.shared.getClient()
+        self.client = try await SupabaseService.shared.getClient()
         let sharedCache = try CacheService()
         self.cacheService = sharedCache
         self.networkMonitor = NetworkMonitor()
         self.syncEngine = SyncEngine(
             cacheService: sharedCache,
-            supabaseClient: await SupabaseService.shared.getClient()
+            supabaseClient: try await SupabaseService.shared.getClient()
         )
     }
 

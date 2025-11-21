@@ -20,8 +20,10 @@ public actor SupabaseProgramRepository: ProgramRepository {
     }
 
     /// Convenience initializer using shared services
-    public init() async {
-        self.client = await SupabaseService.shared.getClient()
+    ///
+    /// - Throws: SupabaseError if client configuration is invalid
+    public init() async throws {
+        self.client = try await SupabaseService.shared.getClient()
         self.networkMonitor = NetworkMonitor()
     }
 

@@ -80,6 +80,50 @@ public actor SupabaseService: Sendable {
         return newClient
     }
 
+    /// Non-isolated method to get a client for dependency injection
+    ///
+    /// Creates a new client instance synchronously for use in DependencyKey values.
+    /// This bypasses actor isolation for dependency injection contexts.
+    ///
+    /// - Returns: A configured SupabaseClient
+    /// - Throws: SupabaseError if configuration is invalid
+    nonisolated public static func createClientForDependencyInjection() throws -> SupabaseClient {
+        // Validate configuration
+        do {
+            try Config.validate()
+        } catch {
+            throw SupabaseError.configurationError(error.localizedDescription)
+        }
+
+        // Parse URL
+        guard let url = URL(string: Config.supabaseURL) else {
+            throw SupabaseError.invalidURL(Config.supabaseURL)
+        }
+
+        // Initialize client with configuration
+        return SupabaseClient(
+            supabaseURL: url,
+            supabaseKey: Config.supabaseAnonKey,
+            options: SupabaseClientOptions(
+                db: .init(
+                    schema: "public"
+                ),
+                auth: .init(
+                    autoRefreshToken: true,
+                    persistSession: true,
+                    storage: SupabaseKeychainStorage(),
+                    flowType: .pkce
+                ),
+                global: .init(
+                    headers: [
+                        "apikey": Config.supabaseAnonKey,
+                        "X-Client-Info": "habittracker-ios/1.0.0"
+                    ]
+                )
+            )
+        )
+    }
+
     /// Tests the connection to Supabase by querying the profiles table
     ///
     /// - Returns: `true` if connection is successful, `false` otherwise

@@ -161,7 +161,7 @@ extension DependencyValues {
 }
 
 private enum SupabaseClientKey: DependencyKey {
-    static let liveValue: SupabaseClient = SupabaseService.shared.getClient()
-    static let testValue: SupabaseClient = SupabaseService.shared.getClient()
-    static let previewValue: SupabaseClient = SupabaseService.shared.getClient()
+    static let liveValue: SupabaseClient = try! SupabaseService.createClientForDependencyInjection()
+    static let testValue: SupabaseClient = try! SupabaseService.createClientForDependencyInjection()
+    static let previewValue: SupabaseClient = try! SupabaseService.createClientForDependencyInjection()
 }
