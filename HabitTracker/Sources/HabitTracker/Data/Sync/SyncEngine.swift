@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import Supabase
 
 /// Engine for synchronizing local cache with Supabase backend

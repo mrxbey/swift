@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import Supabase
 
 /// Supabase implementation of OccurrenceRepository with offline-first caching

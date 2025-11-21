@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import Supabase
 
 /// Coordinates offline sync between local cache and Supabase

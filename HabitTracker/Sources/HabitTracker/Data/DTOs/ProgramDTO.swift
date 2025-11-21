@@ -169,9 +169,8 @@ public struct ProgramGoalDTO: Codable, Sendable, Equatable {
     public let kind: String
     public let linkedExerciseKey: String?
     public let defaultPoints: Int
+    public let schedule: [String: AnyCodable]  // JSONB schedule configuration
     public let orderIndex: Int
-    public let createdAt: Date
-    public let updatedAt: Date
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -181,9 +180,8 @@ public struct ProgramGoalDTO: Codable, Sendable, Equatable {
         case kind
         case linkedExerciseKey = "linked_exercise_key"
         case defaultPoints = "default_points"
+        case schedule
         case orderIndex = "order_index"
-        case createdAt = "created_at"
-        case updatedAt = "updated_at"
     }
 
     public init(from programGoal: ProgramGoal) {
@@ -194,9 +192,8 @@ public struct ProgramGoalDTO: Codable, Sendable, Equatable {
         self.kind = programGoal.kind
         self.linkedExerciseKey = programGoal.linkedExerciseKey
         self.defaultPoints = programGoal.defaultPoints
+        self.schedule = programGoal.schedule
         self.orderIndex = programGoal.orderIndex
-        self.createdAt = programGoal.createdAt
-        self.updatedAt = programGoal.updatedAt
     }
 
     public var toDomain: ProgramGoal {
@@ -208,9 +205,8 @@ public struct ProgramGoalDTO: Codable, Sendable, Equatable {
             kind: kind,
             linkedExerciseKey: linkedExerciseKey,
             defaultPoints: defaultPoints,
-            orderIndex: orderIndex,
-            createdAt: createdAt,
-            updatedAt: updatedAt
+            schedule: schedule,
+            orderIndex: orderIndex
         )
     }
 }

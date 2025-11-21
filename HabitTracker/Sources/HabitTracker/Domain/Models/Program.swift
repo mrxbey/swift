@@ -212,9 +212,8 @@ public final class ProgramGoal: Identifiable, Codable, Sendable, Equatable, Hash
     public var kind: String
     public var linkedExerciseKey: String?
     public var defaultPoints: Int
+    public var schedule: [String: AnyCodable]  // JSONB schedule configuration
     public var orderIndex: Int
-    public let createdAt: Date
-    public var updatedAt: Date
 
     public init(
         id: UUID = UUID(),
@@ -224,9 +223,8 @@ public final class ProgramGoal: Identifiable, Codable, Sendable, Equatable, Hash
         kind: String,
         linkedExerciseKey: String? = nil,
         defaultPoints: Int = 5,
-        orderIndex: Int = 0,
-        createdAt: Date = Date(),
-        updatedAt: Date = Date()
+        schedule: [String: AnyCodable] = [:],
+        orderIndex: Int = 0
     ) {
         self.id = id
         self.programId = programId
@@ -235,9 +233,8 @@ public final class ProgramGoal: Identifiable, Codable, Sendable, Equatable, Hash
         self.kind = kind
         self.linkedExerciseKey = linkedExerciseKey
         self.defaultPoints = defaultPoints
+        self.schedule = schedule
         self.orderIndex = orderIndex
-        self.createdAt = createdAt
-        self.updatedAt = updatedAt
     }
 
     public static func == (lhs: ProgramGoal, rhs: ProgramGoal) -> Bool {
