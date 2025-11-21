@@ -337,9 +337,7 @@ struct SettingsFeature {
                 return .run { send in
                     await send(.deleteAccountResponse(
                         TaskResult {
-                            // TODO: Implement account deletion API call
-                            // For now, just sign out
-                            try await authService.signOut()
+                            try await authService.deleteAccount()
                         }
                     ))
                 }

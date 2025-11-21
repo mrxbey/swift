@@ -172,6 +172,37 @@ public actor AuthService {
         }
     }
 
+    /// Deletes the current user's account and all associated data
+    ///
+    /// This will:
+    /// 1. Call the delete_user_account RPC function to remove all user data
+    /// 2. Sign out the user
+    ///
+    /// - Throws: AuthError if deletion or sign out fails
+    public func deleteAccount() async throws {
+        guard await currentUser() != nil else {
+            throw AuthError.noUserSession
+        }
+
+        do {
+            // Call RPC function to delete all user data
+            // The delete_user_account RPC should handle:
+            // - Deleting measurements
+            // - Deleting goal_occurrences
+            // - Deleting goals
+            // - Deleting reflections
+            // - Deleting areas
+            // - Deleting profile
+            // Note: Auth account deletion may require admin API or separate handling
+            try await client.rpc("delete_user_account").execute()
+
+            // Sign out after successful deletion
+            try await signOut()
+        } catch {
+            throw AuthError.accountDeletionFailed(error.localizedDescription)
+        }
+    }
+
     /// MARK: - Session Refresh
 
     /// Refreshes the current session
@@ -350,6 +381,7 @@ public enum AuthError: LocalizedError, Equatable, Sendable {
     case updatePasswordFailed(String)
     case sessionRefreshFailed(String)
     case appleSignInFailed(String)
+    case accountDeletionFailed(String)
     case invalidAppleCredential
     case noSession
     case noUserSession
@@ -379,6 +411,8 @@ public enum AuthError: LocalizedError, Equatable, Sendable {
             return "Session refresh failed: \(message)"
         case .appleSignInFailed(let message):
             return "Sign in with Apple failed: \(message)"
+        case .accountDeletionFailed(let message):
+            return "Account deletion failed: \(message)"
         case .invalidAppleCredential:
             return "Invalid Apple credential"
         case .noSession:
@@ -418,6 +452,8 @@ public enum AuthError: LocalizedError, Equatable, Sendable {
             return "Try signing in again"
         case .appleSignInFailed:
             return "Try again or use email authentication"
+        case .accountDeletionFailed:
+            return "Please try again. If the problem persists, contact support"
         case .invalidAppleCredential:
             return "Try signing in with Apple again"
         case .noSession:
