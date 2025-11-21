@@ -112,9 +112,7 @@ private enum MeasurementRepositoryKey: DependencyKey {
 }
 
 private enum ReflectionRepositoryKey: DependencyKey {
-    // Note: Cannot use async init in static property, so we create mock for now
-    // In production, inject properly initialized repository
-    static let liveValue: ReflectionRepository = MockReflectionRepository()
+    static let liveValue: ReflectionRepository = SupabaseReflectionRepository()
 
     static let testValue: ReflectionRepository = MockReflectionRepository()
 
@@ -122,9 +120,7 @@ private enum ReflectionRepositoryKey: DependencyKey {
 }
 
 private enum ProgramRepositoryKey: DependencyKey {
-    // Note: Cannot use async init in static property, so we create mock for now
-    // In production, inject properly initialized repository
-    static let liveValue: ProgramRepository = MockProgramRepository()
+    static let liveValue: ProgramRepository = SupabaseProgramRepository()
 
     static let testValue: ProgramRepository = MockProgramRepository()
 
@@ -293,11 +289,10 @@ public actor MockAreaRepository: AreaRepository {
     public func fetchStatistics(for id: UUID) async throws -> AreaStatistics {
         AreaStatistics(
             areaId: id,
-            activeGoalsCount: 5,
-            completedGoalsCount: 10,
-            totalPoints: 150,
-            completionRate: 0.75,
-            currentStreak: 7
+            totalGoals: 15,
+            activeGoals: 5,
+            totalCompletions: 10,
+            completionRate: 0.75
         )
     }
 }
