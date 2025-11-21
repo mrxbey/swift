@@ -627,21 +627,208 @@ public struct GoalEditorFeature {
 
 @Reducer
 public struct OccurrenceDetailFeature {
+
+    /// MARK: - State
+
     @ObservableState
     public struct State: Equatable {
         public var occurrence: GoalOccurrence
+        public var goal: Goal?
+        public var customName: String
+        public var customEmoji: String?
+        public var isEditingName: Bool = false
+        public var isLoading: Bool = false
+        public var isPerformingAction: Bool = false
+        public var errorMessage: String?
+
         public init(occurrence: GoalOccurrence) {
             self.occurrence = occurrence
+            self.goal = nil
+            self.customName = occurrence.nameOverride ?? occurrence.displayTitle
+            self.customEmoji = occurrence.emojiOverride ?? occurrence.displayEmoji
+        }
+
+        public var canComplete: Bool {
+            occurrence.isPending && occurrence.completedCount < occurrence.targetCount && !isPerformingAction
+        }
+
+        public var canUndo: Bool {
+            occurrence.completedCount > 0 && !isPerformingAction
+        }
+
+        public var canSkip: Bool {
+            occurrence.isPending && !isPerformingAction
         }
     }
 
+    /// MARK: - Action
+
     public enum Action: Sendable {
+        // Lifecycle
+        case task
+        case goalLoaded(TaskResult<Goal>)
+
+        // Name editing
+        case editNameTapped
+        case nameChanged(String)
+        case emojiChanged(String?)
+        case saveNameTapped
+        case saveNameResponse(TaskResult<Void>)
+        case cancelNameEdit
+
+        // Actions
+        case completeAgainTapped
+        case undoCompletionTapped
+        case skipTapped
+        case actionResponse(TaskResult<GoalOccurrence>)
+
+        // Dismiss
         case dismiss
     }
 
+    /// MARK: - Dependencies
+
+    @Dependency(\.occurrenceRepository) var occurrenceRepository
+    @Dependency(\.goalRepository) var goalRepository
+    @Dependency(\.dismiss) var dismiss
+
+    /// MARK: - Reducer
+
     public var body: some ReducerOf<Self> {
         Reduce { state, action in
-            return .none
+            switch action {
+
+            /// MARK: Lifecycle
+
+            case .task:
+                state.isLoading = true
+                return .run { [goalId = state.occurrence.goalId] send in
+                    await send(.goalLoaded(
+                        TaskResult { try await goalRepository.fetch(goalId) }
+                    ))
+                }
+
+            case let .goalLoaded(.success(goal)):
+                state.goal = goal
+                state.isLoading = false
+                return .none
+
+            case .goalLoaded(.failure):
+                state.isLoading = false
+                // Silent failure for goal loading - can still show occurrence details
+                return .none
+
+            /// MARK: Name Editing
+
+            case .editNameTapped:
+                state.isEditingName = true
+                return .none
+
+            case let .nameChanged(newName):
+                state.customName = newName
+                return .none
+
+            case let .emojiChanged(newEmoji):
+                state.customEmoji = newEmoji
+                return .none
+
+            case .saveNameTapped:
+                state.isPerformingAction = true
+                state.errorMessage = nil
+
+                return .run { [id = state.occurrence.id, name = state.customName] send in
+                    await send(.saveNameResponse(
+                        TaskResult {
+                            try await occurrenceRepository.rename(id, to: name)
+                        }
+                    ))
+                }
+
+            case .saveNameResponse(.success):
+                state.occurrence.nameOverride = state.customName
+                state.occurrence.emojiOverride = state.customEmoji
+                state.isEditingName = false
+                state.isPerformingAction = false
+                return .none
+
+            case let .saveNameResponse(.failure(error)):
+                state.errorMessage = "Failed to save name: \(error.localizedDescription)"
+                state.isPerformingAction = false
+                return .none
+
+            case .cancelNameEdit:
+                state.customName = state.occurrence.nameOverride ?? state.occurrence.displayTitle
+                state.customEmoji = state.occurrence.emojiOverride ?? state.occurrence.displayEmoji
+                state.isEditingName = false
+                return .none
+
+            /// MARK: Actions
+
+            case .completeAgainTapped:
+                guard state.canComplete else { return .none }
+
+                state.isPerformingAction = true
+                state.errorMessage = nil
+
+                return .run { [id = state.occurrence.id] send in
+                    await send(.actionResponse(
+                        TaskResult {
+                            try await occurrenceRepository.completeTick(id)
+                            return try await occurrenceRepository.fetch(id)
+                        }
+                    ))
+                }
+
+            case .undoCompletionTapped:
+                guard state.canUndo else { return .none }
+
+                state.isPerformingAction = true
+                state.errorMessage = nil
+
+                return .run { [occurrence = state.occurrence] send in
+                    await send(.actionResponse(
+                        TaskResult {
+                            var updated = occurrence
+                            updated.decrementCompletion()
+                            updated.updatedAt = Date()
+                            try await occurrenceRepository.update(updated)
+                            return updated
+                        }
+                    ))
+                }
+
+            case .skipTapped:
+                guard state.canSkip else { return .none }
+
+                state.isPerformingAction = true
+                state.errorMessage = nil
+
+                return .run { [id = state.occurrence.id] send in
+                    await send(.actionResponse(
+                        TaskResult {
+                            try await occurrenceRepository.skip(id, reason: nil)
+                            return try await occurrenceRepository.fetch(id)
+                        }
+                    ))
+                }
+
+            case let .actionResponse(.success(updatedOccurrence)):
+                state.occurrence = updatedOccurrence
+                state.isPerformingAction = false
+                return .none
+
+            case let .actionResponse(.failure(error)):
+                state.errorMessage = "Action failed: \(error.localizedDescription)"
+                state.isPerformingAction = false
+                return .none
+
+            /// MARK: Dismiss
+
+            case .dismiss:
+                return .run { _ in
+                    await dismiss()
+                }
+            }
         }
     }
 }
