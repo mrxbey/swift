@@ -5,6 +5,7 @@
 
 import SwiftUI
 import ComposableArchitecture
+import Dependencies
 
 struct ProgramsView: View {
     @Bindable var store: StoreOf<ProgramsFeature>
@@ -248,10 +249,19 @@ struct ProgramDetailView: View {
                         Button {
                             store.send(.addProgramTapped)
                         } label: {
-                            Text("Add to My Goals")
+                            if store.isAdopting {
+                                HStack {
+                                    ProgressView()
+                                        .progressViewStyle(.circular)
+                                    Text("Adding...")
+                                }
                                 .primaryButtonStyle()
+                            } else {
+                                Text("Add to My Goals")
+                                    .primaryButtonStyle()
+                            }
                         }
-                        .disabled(store.selectedItems.isEmpty)
+                        .disabled(store.selectedItems.isEmpty || store.isAdopting)
                     }
                     .padding()
                 }
@@ -264,6 +274,11 @@ struct ProgramDetailView: View {
                         store.send(.closeTapped)
                     }
                 }
+            }
+            .sheet(
+                item: $store.scope(state: \.areaSelector, action: \.areaSelector)
+            ) { store in
+                AreaSelectorView(store: store)
             }
         }
     }
@@ -344,8 +359,11 @@ struct ProgramsFeature {
         case programsResponse(TaskResult<[ProgramViewModel]>)
         case categorySelected(String?)
         case programTapped(UUID)
+        case programItemsLoaded(UUID, [ProgramItemViewModel])
         case programDetail(PresentationAction<ProgramDetailFeature.Action>)
     }
+
+    @Dependency(\.programRepository) var programRepository
 
     var body: some ReducerOf<Self> {
         BindableReducer()
@@ -357,7 +375,25 @@ struct ProgramsFeature {
 
             case .task:
                 state.isLoading = true
-                return .none
+                return .run { send in
+                    await send(.programsResponse(
+                        TaskResult {
+                            let programs = try await programRepository.fetchAll()
+                            return programs.map { program in
+                                ProgramViewModel(
+                                    id: program.id,
+                                    title: program.title,
+                                    summary: program.summary,
+                                    category: program.category,
+                                    thumbnailURL: program.thumbnailURL,
+                                    heroURL: program.heroURL,
+                                    rating: program.rating,
+                                    addedCount: program.addedCount
+                                )
+                            }
+                        }
+                    ))
+                }
 
             case .programsResponse(.success(let programs)):
                 state.programs = IdentifiedArray(uniqueElements: programs)
@@ -376,6 +412,23 @@ struct ProgramsFeature {
             case .programTapped(let id):
                 guard let program = state.programs[id: id] else { return .none }
                 state.programDetail = ProgramDetailFeature.State(program: program, items: [])
+
+                // Fetch program goals
+                return .run { send in
+                    let programGoals = try await programRepository.fetchGoals(for: id)
+                    let itemViewModels = programGoals.map { goal in
+                        ProgramItemViewModel(
+                            id: goal.id,
+                            title: goal.title,
+                            emoji: goal.emoji,
+                            defaultPoints: goal.defaultPoints
+                        )
+                    }
+                    await send(.programItemsLoaded(id, itemViewModels))
+                }
+
+            case .programItemsLoaded(_, let items):
+                state.programDetail?.items = IdentifiedArray(uniqueElements: items)
                 return .none
 
             case .programDetail:
@@ -395,6 +448,10 @@ struct ProgramDetailFeature {
         var program: ProgramViewModel
         var items: IdentifiedArrayOf<ProgramItemViewModel> = []
         var selectedItems: Set<UUID> = []
+        var availableAreas: IdentifiedArrayOf<Area> = []
+        var selectedAreaId: UUID?
+        var isAdopting = false
+        @Presents var areaSelector: AreaSelectorFeature.State?
 
         init(program: ProgramViewModel, items: [ProgramItemViewModel]) {
             self.program = program
@@ -406,8 +463,16 @@ struct ProgramDetailFeature {
     enum Action: Sendable {
         case itemToggled(UUID)
         case addProgramTapped
+        case areasLoaded([Area])
+        case areaSelected(UUID)
+        case adoptionResponse(TaskResult<[Goal]>)
         case closeTapped
+        case areaSelector(PresentationAction<AreaSelectorFeature.Action>)
     }
+
+    @Dependency(\.programRepository) var programRepository
+    @Dependency(\.areaRepository) var areaRepository
+    @Dependency(\.dismiss) var dismiss
 
     var body: some ReducerOf<Self> {
         Reduce { state, action in
@@ -421,11 +486,168 @@ struct ProgramDetailFeature {
                 return .none
 
             case .addProgramTapped:
-                // TODO: Implement program adoption
+                state.isAdopting = true
+
+                // Load available areas
+                return .run { send in
+                    let areas = try await areaRepository.fetchAll()
+                    await send(.areasLoaded(areas.filter { $0.status == .active }))
+                }
+
+            case .areasLoaded(let areas):
+                state.availableAreas = IdentifiedArray(uniqueElements: areas)
+
+                if areas.isEmpty {
+                    // No areas available - show alert or create default area
+                    state.isAdopting = false
+                    return .none
+                } else if areas.count == 1 {
+                    // Only one area - auto-select and adopt
+                    return .run { [areaId = areas[0].id] send in
+                        await send(.areaSelected(areaId))
+                    }
+                } else {
+                    // Multiple areas - show selector
+                    state.areaSelector = AreaSelectorFeature.State(areas: areas)
+                    return .none
+                }
+
+            case .areaSelected(let areaId):
+                state.selectedAreaId = areaId
+                state.areaSelector = nil
+
+                let programId = state.program.id
+
+                // Adopt program using repository method
+                return .run { send in
+                    await send(.adoptionResponse(
+                        TaskResult {
+                            try await programRepository.adoptProgram(
+                                programId: programId,
+                                areaId: areaId
+                            )
+                        }
+                    ))
+                }
+
+            case .adoptionResponse(.success(let goals)):
+                state.isAdopting = false
+                // Show success and dismiss
+                return .run { send in
+                    await dismiss()
+                }
+
+            case .adoptionResponse(.failure(let error)):
+                state.isAdopting = false
+                // TODO: Show error alert
                 return .none
 
             case .closeTapped:
+                return .run { send in
+                    await dismiss()
+                }
+
+            case .areaSelector(.presented(.delegate(.areaSelected(let areaId)))):
+                return .run { send in
+                    await send(.areaSelected(areaId))
+                }
+
+            case .areaSelector:
                 return .none
+            }
+        }
+        .ifLet(\.$areaSelector, action: \.areaSelector) {
+            AreaSelectorFeature()
+        }
+    }
+}
+
+/// MARK: - Area Selector Feature
+
+@Reducer
+struct AreaSelectorFeature {
+    @ObservableState
+    struct State: Equatable {
+        var areas: IdentifiedArrayOf<Area>
+
+        init(areas: [Area]) {
+            self.areas = IdentifiedArray(uniqueElements: areas)
+        }
+    }
+
+    enum Action: Sendable {
+        case areaSelected(UUID)
+        case cancelTapped
+        case delegate(Delegate)
+
+        enum Delegate: Sendable {
+            case areaSelected(UUID)
+        }
+    }
+
+    @Dependency(\.dismiss) var dismiss
+
+    var body: some ReducerOf<Self> {
+        Reduce { state, action in
+            switch action {
+            case .areaSelected(let areaId):
+                return .run { send in
+                    await send(.delegate(.areaSelected(areaId)))
+                    await dismiss()
+                }
+
+            case .cancelTapped:
+                return .run { send in
+                    await dismiss()
+                }
+
+            case .delegate:
+                return .none
+            }
+        }
+    }
+}
+
+/// MARK: - Area Selector View
+
+struct AreaSelectorView: View {
+    @Bindable var store: StoreOf<AreaSelectorFeature>
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(store.areas) { area in
+                    Button {
+                        store.send(.areaSelected(area.id))
+                    } label: {
+                        HStack {
+                            if let emoji = area.emoji {
+                                Text(emoji)
+                                    .font(.title3)
+                            }
+
+                            Text(area.name)
+                                .font(Theme.Typography.body)
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(Theme.Typography.caption)
+                                .foregroundColor(Theme.Colors.secondaryText)
+                        }
+                        .padding(.vertical, Theme.Spacing.xSmall)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .navigationTitle("Select Area")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        store.send(.cancelTapped)
+                    }
+                }
             }
         }
     }

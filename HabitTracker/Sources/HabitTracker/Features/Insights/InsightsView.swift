@@ -6,6 +6,7 @@
 import SwiftUI
 import ComposableArchitecture
 import Charts
+import Dependencies
 
 struct InsightsView: View {
     @Bindable var store: StoreOf<InsightsFeature>
@@ -296,12 +297,39 @@ struct InsightsFeature {
         case completionDataResponse(TaskResult<[CompletionDataPoint]>)
     }
 
+    @Dependency(\.occurrenceRepository) var occurrenceRepository
+    @Dependency(\.goalRepository) var goalRepository
+    @Dependency(\.rpcService) var rpcService
+
     var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
             case .task:
                 state.isLoading = true
-                return .none
+
+                return .run { send in
+                    // Fetch all insights data in parallel
+                    async let streaksResult = TaskResult {
+                        try await calculateStreaks()
+                    }
+
+                    async let pointsResult = TaskResult {
+                        try await calculatePoints()
+                    }
+
+                    async let topGoalsResult = TaskResult {
+                        try await fetchTopGoals()
+                    }
+
+                    async let completionDataResult = TaskResult {
+                        try await calculateCompletionData()
+                    }
+
+                    await send(.streaksResponse(await streaksResult))
+                    await send(.pointsResponse(await pointsResult))
+                    await send(.topGoalsResponse(await topGoalsResult))
+                    await send(.completionDataResponse(await completionDataResult))
+                }
 
             case .streaksResponse(.success(let streaks)):
                 state.currentStreak = streaks.current
@@ -337,6 +365,132 @@ struct InsightsFeature {
                 return .none
             }
         }
+    }
+
+    // MARK: - Private Helpers
+
+    private func calculateStreaks() async throws -> (current: Int, longest: Int) {
+        let today = Date()
+        let calendar = Calendar.current
+
+        // Fetch occurrences for the last 90 days to calculate streaks
+        var allOccurrences: [GoalOccurrence] = []
+        for dayOffset in 0..<90 {
+            guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
+            let occurrences = try await occurrenceRepository.fetchOccurrences(for: date)
+            allOccurrences.append(contentsOf: occurrences)
+        }
+
+        // Group by date and check if at least one completion per day
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+
+        let completionsByDate = Dictionary(grouping: allOccurrences) { occurrence in
+            dateFormatter.string(from: occurrence.scheduledDate)
+        }
+
+        // Calculate current streak (going back from today)
+        var currentStreak = 0
+        for dayOffset in 0..<90 {
+            guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { break }
+            let dateString = dateFormatter.string(from: date)
+
+            let hasCompletion = completionsByDate[dateString]?.contains { $0.status == .completed } ?? false
+            if hasCompletion {
+                currentStreak += 1
+            } else {
+                break
+            }
+        }
+
+        // Calculate longest streak
+        var longestStreak = 0
+        var tempStreak = 0
+        for dayOffset in 0..<90 {
+            guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { break }
+            let dateString = dateFormatter.string(from: date)
+
+            let hasCompletion = completionsByDate[dateString]?.contains { $0.status == .completed } ?? false
+            if hasCompletion {
+                tempStreak += 1
+                longestStreak = max(longestStreak, tempStreak)
+            } else {
+                tempStreak = 0
+            }
+        }
+
+        return (current: currentStreak, longest: longestStreak)
+    }
+
+    private func calculatePoints() async throws -> (today: Int, week: Int, allTime: Int) {
+        let today = Date()
+        let calendar = Calendar.current
+
+        // Today's points
+        let todayOccurrences = try await occurrenceRepository.fetchOccurrences(for: today)
+        let pointsToday = todayOccurrences
+            .filter { $0.status == .completed }
+            .reduce(0) { $0 + ($1.pointsEarned ?? 0) }
+
+        // This week's points
+        var pointsThisWeek = 0
+        for dayOffset in 0..<7 {
+            guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
+            let occurrences = try await occurrenceRepository.fetchOccurrences(for: date)
+            pointsThisWeek += occurrences
+                .filter { $0.status == .completed }
+                .reduce(0) { $0 + ($1.pointsEarned ?? 0) }
+        }
+
+        // All time points (last 90 days as proxy)
+        var pointsAllTime = 0
+        for dayOffset in 0..<90 {
+            guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
+            let occurrences = try await occurrenceRepository.fetchOccurrences(for: date)
+            pointsAllTime += occurrences
+                .filter { $0.status == .completed }
+                .reduce(0) { $0 + ($1.pointsEarned ?? 0) }
+        }
+
+        return (today: pointsToday, week: pointsThisWeek, allTime: pointsAllTime)
+    }
+
+    private func fetchTopGoals() async throws -> [TopGoalItem] {
+        let topGoalsWithStats = try await goalRepository.fetchMostCompleted(limit: 10, days: 30)
+
+        return topGoalsWithStats.enumerated().map { index, goalWithStats in
+            TopGoalItem(
+                id: goalWithStats.goalId,
+                rankNumber: index + 1,
+                title: goalWithStats.title,
+                emoji: goalWithStats.emoji,
+                completionCount: goalWithStats.completionCount
+            )
+        }
+    }
+
+    private func calculateCompletionData() async throws -> [CompletionDataPoint] {
+        let calendar = Calendar.current
+        let today = Date()
+
+        var dataPoints: [CompletionDataPoint] = []
+
+        for dayOffset in 0..<7 {
+            guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
+            let occurrences = try await occurrenceRepository.fetchOccurrences(for: date)
+
+            let total = occurrences.count
+            let completed = occurrences.filter { $0.status == .completed }.count
+
+            let rate = total > 0 ? Double(completed) / Double(total) : 0.0
+
+            dataPoints.append(CompletionDataPoint(
+                date: date,
+                completionRate: rate
+            ))
+        }
+
+        return dataPoints.reversed() // Show oldest to newest
     }
 }
 

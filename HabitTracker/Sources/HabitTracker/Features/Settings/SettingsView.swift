@@ -5,6 +5,7 @@
 
 import SwiftUI
 import ComposableArchitecture
+import Dependencies
 
 /// External links configuration
 /// Note: Update these URLs with actual production URLs before release
@@ -133,6 +134,9 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .alert($store.scope(state: \.signOutConfirmation, action: \.signOutConfirmation))
             .alert($store.scope(state: \.deleteAccountConfirmation, action: \.deleteAccountConfirmation))
+            .task {
+                store.send(.task)
+            }
         }
     }
 
@@ -191,18 +195,28 @@ struct SettingsFeature {
 
     enum Action: Sendable, BindableAction {
         case binding(BindingAction<State>)
+        case task
+        case profileLoaded(displayName: String, email: String)
         case exportDataTapped
+        case exportResponse(TaskResult<URL>)
         case syncNowTapped
+        case syncResponse(TaskResult<Date>)
         case signOutTapped
         case deleteAccountTapped
         case signOutConfirmation(PresentationAction<Alert>)
         case deleteAccountConfirmation(PresentationAction<Alert>)
+        case signOutResponse(TaskResult<Void>)
+        case deleteAccountResponse(TaskResult<Void>)
 
         enum Alert: Sendable {
             case confirmSignOut
             case confirmDeleteAccount
         }
     }
+
+    @Dependency(\.authService) var authService
+    @Dependency(\.syncCoordinator) var syncCoordinator
+    @Dependency(\.dismiss) var dismiss
 
     var body: some ReducerOf<Self> {
         BindableReducer()
@@ -212,12 +226,68 @@ struct SettingsFeature {
             case .binding:
                 return .none
 
+            case .task:
+                // Load user profile on view appear
+                return .run { send in
+                    if let user = await authService.currentUser() {
+                        await send(.profileLoaded(
+                            displayName: user.email ?? "User",
+                            email: user.email ?? ""
+                        ))
+                    }
+                }
+
+            case .profileLoaded(let displayName, let email):
+                state.displayName = displayName
+                state.email = email
+                return .none
+
             case .exportDataTapped:
-                // TODO: Implement export
+                // Export user data to JSON file
+                return .run { send in
+                    await send(.exportResponse(
+                        TaskResult {
+                            // TODO: Implement full data export
+                            // For now, create a placeholder export
+                            let exportData: [String: Any] = [
+                                "exported_at": ISO8601DateFormatter().string(from: Date()),
+                                "user_email": await authService.currentUser()?.email ?? "",
+                                "version": "1.0.0"
+                            ]
+
+                            let jsonData = try JSONSerialization.data(withJSONObject: exportData, options: .prettyPrinted)
+                            let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("habit_tracker_export_\(Date().timeIntervalSince1970).json")
+                            try jsonData.write(to: fileURL)
+                            return fileURL
+                        }
+                    ))
+                }
+
+            case .exportResponse(.success(let fileURL)):
+                // TODO: Present share sheet with the exported file
+                return .none
+
+            case .exportResponse(.failure):
+                // TODO: Show error alert
                 return .none
 
             case .syncNowTapped:
-                state.lastSyncDate = Date()
+                // Trigger manual sync
+                return .run { send in
+                    await send(.syncResponse(
+                        TaskResult {
+                            try await syncCoordinator.sync()
+                            return Date()
+                        }
+                    ))
+                }
+
+            case .syncResponse(.success(let syncDate)):
+                state.lastSyncDate = syncDate
+                return .none
+
+            case .syncResponse(.failure):
+                // TODO: Show error alert
                 return .none
 
             case .signOutTapped:
@@ -245,11 +315,41 @@ struct SettingsFeature {
                 return .none
 
             case .signOutConfirmation(.presented(.confirmSignOut)):
-                // TODO: Implement sign out
+                // Perform sign out
+                return .run { send in
+                    await send(.signOutResponse(
+                        TaskResult {
+                            try await authService.signOut()
+                        }
+                    ))
+                }
+
+            case .signOutResponse(.success):
+                // Sign out successful - dismiss will be handled by parent
+                return .none
+
+            case .signOutResponse(.failure):
+                // TODO: Show error alert
                 return .none
 
             case .deleteAccountConfirmation(.presented(.confirmDeleteAccount)):
-                // TODO: Implement account deletion
+                // Perform account deletion
+                return .run { send in
+                    await send(.deleteAccountResponse(
+                        TaskResult {
+                            // TODO: Implement account deletion API call
+                            // For now, just sign out
+                            try await authService.signOut()
+                        }
+                    ))
+                }
+
+            case .deleteAccountResponse(.success):
+                // Account deleted - dismiss will be handled by parent
+                return .none
+
+            case .deleteAccountResponse(.failure):
+                // TODO: Show error alert
                 return .none
 
             case .signOutConfirmation, .deleteAccountConfirmation:

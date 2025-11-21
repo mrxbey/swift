@@ -20,7 +20,10 @@ public final class CacheService: @unchecked Sendable {
             CachedArea.self,
             CachedGoal.self,
             CachedOccurrence.self,
-            CachedMeasurement.self
+            CachedMeasurement.self,
+            CachedProfile.self,
+            CachedProgram.self,
+            CachedReflection.self
         ])
 
         let modelConfiguration = ModelConfiguration(
@@ -244,6 +247,133 @@ public final class CacheService: @unchecked Sendable {
         }
     }
 
+    /// MARK: - Profile Operations
+
+    public func saveProfile(_ profile: Profile, syncState: SyncState = .synced) throws {
+        let descriptor = FetchDescriptor<CachedProfile>(
+            predicate: #Predicate { $0.id == profile.id }
+        )
+
+        if let existing = try modelContext.fetch(descriptor).first {
+            existing.update(from: profile, syncState: syncState)
+        } else {
+            let cached = CachedProfile(from: profile, syncState: syncState)
+            modelContext.insert(cached)
+        }
+
+        try modelContext.save()
+    }
+
+    public func fetchProfile(userId: UUID) throws -> Profile? {
+        let descriptor = FetchDescriptor<CachedProfile>(
+            predicate: #Predicate { $0.id == userId }
+        )
+
+        return try modelContext.fetch(descriptor).first?.toDomain()
+    }
+
+    public func deleteProfile(id: UUID) throws {
+        let descriptor = FetchDescriptor<CachedProfile>(
+            predicate: #Predicate { $0.id == id }
+        )
+
+        if let cached = try modelContext.fetch(descriptor).first {
+            modelContext.delete(cached)
+            try modelContext.save()
+        }
+    }
+
+    /// MARK: - Program Operations
+
+    public func saveProgram(_ program: Program, syncState: SyncState = .synced) throws {
+        let descriptor = FetchDescriptor<CachedProgram>(
+            predicate: #Predicate { $0.id == program.id }
+        )
+
+        if let existing = try modelContext.fetch(descriptor).first {
+            existing.update(from: program, syncState: syncState)
+        } else {
+            let cached = CachedProgram(from: program, syncState: syncState)
+            modelContext.insert(cached)
+        }
+
+        try modelContext.save()
+    }
+
+    public func fetchPrograms() throws -> [Program] {
+        let descriptor = FetchDescriptor<CachedProgram>(
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+
+        let cached = try modelContext.fetch(descriptor)
+        return cached.map { $0.toDomain() }
+    }
+
+    public func fetchProgram(id: UUID) throws -> Program? {
+        let descriptor = FetchDescriptor<CachedProgram>(
+            predicate: #Predicate { $0.id == id }
+        )
+
+        return try modelContext.fetch(descriptor).first?.toDomain()
+    }
+
+    public func deleteProgram(id: UUID) throws {
+        let descriptor = FetchDescriptor<CachedProgram>(
+            predicate: #Predicate { $0.id == id }
+        )
+
+        if let cached = try modelContext.fetch(descriptor).first {
+            modelContext.delete(cached)
+            try modelContext.save()
+        }
+    }
+
+    /// MARK: - Reflection Operations
+
+    public func saveReflection(_ reflection: Reflection, syncState: SyncState = .synced) throws {
+        let descriptor = FetchDescriptor<CachedReflection>(
+            predicate: #Predicate { $0.id == reflection.id }
+        )
+
+        if let existing = try modelContext.fetch(descriptor).first {
+            existing.update(from: reflection, syncState: syncState)
+        } else {
+            let cached = CachedReflection(from: reflection, syncState: syncState)
+            modelContext.insert(cached)
+        }
+
+        try modelContext.save()
+    }
+
+    public func fetchReflections(userId: UUID) throws -> [Reflection] {
+        let descriptor = FetchDescriptor<CachedReflection>(
+            predicate: #Predicate { $0.userId == userId },
+            sortBy: [SortDescriptor(\.reflectionDate, order: .reverse)]
+        )
+
+        let cached = try modelContext.fetch(descriptor)
+        return cached.map { $0.toDomain() }
+    }
+
+    public func fetchReflection(id: UUID) throws -> Reflection? {
+        let descriptor = FetchDescriptor<CachedReflection>(
+            predicate: #Predicate { $0.id == id }
+        )
+
+        return try modelContext.fetch(descriptor).first?.toDomain()
+    }
+
+    public func deleteReflection(id: UUID) throws {
+        let descriptor = FetchDescriptor<CachedReflection>(
+            predicate: #Predicate { $0.id == id }
+        )
+
+        if let cached = try modelContext.fetch(descriptor).first {
+            modelContext.delete(cached)
+            try modelContext.save()
+        }
+    }
+
     /// MARK: - Sync State Management
 
     public func fetchPendingAreas() throws -> [CachedArea] {
@@ -278,6 +408,30 @@ public final class CacheService: @unchecked Sendable {
         return try modelContext.fetch(descriptor)
     }
 
+    public func fetchPendingProfiles() throws -> [CachedProfile] {
+        let descriptor = FetchDescriptor<CachedProfile>(
+            predicate: #Predicate { $0.syncState == "pending" }
+        )
+
+        return try modelContext.fetch(descriptor)
+    }
+
+    public func fetchPendingPrograms() throws -> [CachedProgram] {
+        let descriptor = FetchDescriptor<CachedProgram>(
+            predicate: #Predicate { $0.syncState == "pending" }
+        )
+
+        return try modelContext.fetch(descriptor)
+    }
+
+    public func fetchPendingReflections() throws -> [CachedReflection] {
+        let descriptor = FetchDescriptor<CachedReflection>(
+            predicate: #Predicate { $0.syncState == "pending" }
+        )
+
+        return try modelContext.fetch(descriptor)
+    }
+
     /// MARK: - Clear Cache
 
     public func clearAll() throws {
@@ -285,6 +439,9 @@ public final class CacheService: @unchecked Sendable {
         try modelContext.delete(model: CachedGoal.self)
         try modelContext.delete(model: CachedOccurrence.self)
         try modelContext.delete(model: CachedMeasurement.self)
+        try modelContext.delete(model: CachedProfile.self)
+        try modelContext.delete(model: CachedProgram.self)
+        try modelContext.delete(model: CachedReflection.self)
         try modelContext.save()
     }
 
@@ -329,6 +486,36 @@ public final class CacheService: @unchecked Sendable {
         )
         let oldMeasurements = try modelContext.fetch(measurementDescriptor)
         oldMeasurements.forEach { modelContext.delete($0) }
+
+        // Profiles
+        let profileDescriptor = FetchDescriptor<CachedProfile>(
+            predicate: #Predicate { profile in
+                profile.syncState == "synced" &&
+                (profile.lastSyncedAt ?? .distantFuture) < date
+            }
+        )
+        let oldProfiles = try modelContext.fetch(profileDescriptor)
+        oldProfiles.forEach { modelContext.delete($0) }
+
+        // Programs
+        let programDescriptor = FetchDescriptor<CachedProgram>(
+            predicate: #Predicate { program in
+                program.syncState == "synced" &&
+                (program.lastSyncedAt ?? .distantFuture) < date
+            }
+        )
+        let oldPrograms = try modelContext.fetch(programDescriptor)
+        oldPrograms.forEach { modelContext.delete($0) }
+
+        // Reflections
+        let reflectionDescriptor = FetchDescriptor<CachedReflection>(
+            predicate: #Predicate { reflection in
+                reflection.syncState == "synced" &&
+                (reflection.lastSyncedAt ?? .distantFuture) < date
+            }
+        )
+        let oldReflections = try modelContext.fetch(reflectionDescriptor)
+        oldReflections.forEach { modelContext.delete($0) }
 
         try modelContext.save()
     }

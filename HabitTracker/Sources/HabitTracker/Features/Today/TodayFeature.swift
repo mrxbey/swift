@@ -114,6 +114,14 @@ public struct TodayFeature {
 
                     // Water progress can be fetched if we have a water goal
                     // For now, skip water progress until we identify the water goal
+
+                    // Subscribe to realtime occurrence updates
+                    // Get userId from first occurrence or goal
+                    if let userId = try? await goalRepository.fetchAll().first?.userId {
+                        for await event in await realtimeService.subscribeToOccurrences(userId: userId) {
+                            await send(.realtimeOccurrenceEvent(event))
+                        }
+                    }
                 }
 
             case .refresh:
@@ -152,6 +160,29 @@ public struct TodayFeature {
 
             case .waterProgressResponse(.failure):
                 // Silent failure for water progress
+                return .none
+
+            /// MARK: Realtime Events
+
+            case let .realtimeOccurrenceEvent(.inserted(occurrence)):
+                // Add new occurrence if it's for today
+                let calendar = calendar
+                if calendar.isDate(occurrence.scheduledDate, inSameDayAs: state.selectedDate) {
+                    state.occurrences.append(occurrence)
+                }
+                return .none
+
+            case let .realtimeOccurrenceEvent(.updated(occurrence)):
+                // Update existing occurrence with server state
+                // Handle conflict: server always wins for realtime events
+                if state.occurrences[id: occurrence.id] != nil {
+                    state.occurrences[id: occurrence.id] = occurrence
+                }
+                return .none
+
+            case let .realtimeOccurrenceEvent(.deleted(id)):
+                // Remove deleted occurrence
+                state.occurrences.remove(id: id)
                 return .none
 
             /// MARK: User Interactions

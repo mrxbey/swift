@@ -5,6 +5,7 @@
 
 import SwiftUI
 import ComposableArchitecture
+import Dependencies
 
 struct AreasView: View {
     @Bindable var store: StoreOf<AreasFeature>
@@ -292,6 +293,7 @@ struct AreasFeature {
     @ObservableState
     struct State: Equatable {
         var areas: IdentifiedArrayOf<Area> = []
+        var isLoading = false
         @Presents var areaEditor: AreaEditorFeature.State?
         @Presents var areaDetail: AreaDetailFeature.State?
     }
@@ -303,31 +305,85 @@ struct AreasFeature {
         case addAreaTapped
         case areaEditor(PresentationAction<AreaEditorFeature.Action>)
         case areaDetail(PresentationAction<AreaDetailFeature.Action>)
+        case areaCreated(Area)
+        case areaUpdated(Area)
+        case areaDeleted(UUID)
     }
+
+    @Dependency(\.areaRepository) var areaRepository
+    @Dependency(\.goalRepository) var goalRepository
 
     var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
             case .task:
-                return .none
+                state.isLoading = true
+                return .run { send in
+                    await send(.areasResponse(
+                        TaskResult { try await areaRepository.fetchAll() }
+                    ))
+                }
 
             case .areasResponse(.success(let areas)):
                 state.areas = IdentifiedArray(uniqueElements: areas)
+                state.isLoading = false
                 return .none
 
             case .areasResponse(.failure):
+                state.isLoading = false
                 return .none
 
             case .areaTapped(let id):
                 guard let area = state.areas[id: id] else { return .none }
                 state.areaDetail = AreaDetailFeature.State(area: area, goals: [])
-                return .none
+                return .run { [area] send in
+                    // Fetch goals for this area
+                    let goals = try await goalRepository.fetchGoals(for: area.id)
+                    await send(.areaDetail(.presented(.goalsLoaded(goals))))
+                }
 
             case .addAreaTapped:
                 state.areaEditor = AreaEditorFeature.State(mode: .create)
                 return .none
 
-            case .areaEditor, .areaDetail:
+            case .areaEditor(.presented(.delegate(.areaCreated(let area)))):
+                state.areaEditor = nil
+                state.areas.append(area)
+                return .none
+
+            case .areaEditor(.presented(.delegate(.areaUpdated(let area)))):
+                state.areaEditor = nil
+                state.areas[id: area.id] = area
+                return .none
+
+            case .areaEditor:
+                return .none
+
+            case .areaDetail(.presented(.delegate(.areaUpdated(let area)))):
+                state.areas[id: area.id] = area
+                if let detail = state.areaDetail {
+                    state.areaDetail = AreaDetailFeature.State(area: area, goals: detail.goals.elements)
+                }
+                return .none
+
+            case .areaDetail(.presented(.delegate(.areaDeleted(let id)))):
+                state.areaDetail = nil
+                state.areas.remove(id: id)
+                return .none
+
+            case .areaDetail:
+                return .none
+
+            case .areaCreated(let area):
+                state.areas.append(area)
+                return .none
+
+            case .areaUpdated(let area):
+                state.areas[id: area.id] = area
+                return .none
+
+            case .areaDeleted(let id):
+                state.areas.remove(id: id)
                 return .none
             }
         }
@@ -353,6 +409,7 @@ struct AreaEditorFeature {
         var name: String = ""
         var selectedEmoji: String?
         var selectedColorIndex: Int = 0
+        var isSaving = false
 
         init(mode: Mode) {
             self.mode = mode
@@ -370,8 +427,18 @@ struct AreaEditorFeature {
     enum Action: Sendable {
         case colorSelected(Int)
         case saveTapped
+        case saveResponse(TaskResult<Area>)
         case cancelTapped
+        case delegate(Delegate)
+
+        enum Delegate: Sendable {
+            case areaCreated(Area)
+            case areaUpdated(Area)
+        }
     }
+
+    @Dependency(\.areaRepository) var areaRepository
+    @Dependency(\.dismiss) var dismiss
 
     var body: some ReducerOf<Self> {
         Reduce { state, action in
@@ -380,7 +447,67 @@ struct AreaEditorFeature {
                 state.selectedColorIndex = index
                 return .none
 
-            case .saveTapped, .cancelTapped:
+            case .saveTapped:
+                guard !state.name.isEmpty else { return .none }
+
+                state.isSaving = true
+                let colorHex = Theme.Colors.areaColors[state.selectedColorIndex].description
+
+                switch state.mode {
+                case .create:
+                    let area = Area(
+                        name: state.name,
+                        emoji: state.selectedEmoji,
+                        colorHex: colorHex,
+                        status: .active
+                    )
+                    return .run { send in
+                        await send(.saveResponse(
+                            TaskResult { try await areaRepository.create(area) }
+                        ))
+                    }
+
+                case .edit(let existingArea):
+                    var updatedArea = existingArea
+                    updatedArea.name = state.name
+                    updatedArea.emoji = state.selectedEmoji
+                    updatedArea.colorHex = colorHex
+
+                    return .run { send in
+                        await send(.saveResponse(
+                            TaskResult {
+                                try await areaRepository.update(updatedArea)
+                                return updatedArea
+                            }
+                        ))
+                    }
+                }
+
+            case .saveResponse(.success(let area)):
+                state.isSaving = false
+                switch state.mode {
+                case .create:
+                    return .run { send in
+                        await send(.delegate(.areaCreated(area)))
+                        await dismiss()
+                    }
+                case .edit:
+                    return .run { send in
+                        await send(.delegate(.areaUpdated(area)))
+                        await dismiss()
+                    }
+                }
+
+            case .saveResponse(.failure):
+                state.isSaving = false
+                return .none
+
+            case .cancelTapped:
+                return .run { _ in
+                    await dismiss()
+                }
+
+            case .delegate:
                 return .none
             }
         }
@@ -393,31 +520,97 @@ struct AreaDetailFeature {
     struct State: Equatable {
         var area: Area
         var goals: IdentifiedArrayOf<Goal> = []
+        var isLoading = false
         @Presents var deleteConfirmation: AlertState<Action.Alert>?
+        @Presents var areaEditor: AreaEditorFeature.State?
     }
 
     enum Action: Sendable {
+        case goalsLoaded([Goal])
         case editTapped
         case togglePauseTapped
+        case toggleResponse(TaskResult<Area>)
         case archiveTapped
+        case archiveResponse(TaskResult<Area>)
         case deleteTapped
         case deleteConfirmation(PresentationAction<Alert>)
+        case deleteResponse(TaskResult<Void>)
+        case areaEditor(PresentationAction<AreaEditorFeature.Action>)
+        case delegate(Delegate)
 
         enum Alert: Sendable {
             case confirmDelete
         }
+
+        enum Delegate: Sendable {
+            case areaUpdated(Area)
+            case areaDeleted(UUID)
+        }
     }
+
+    @Dependency(\.areaRepository) var areaRepository
+    @Dependency(\.dismiss) var dismiss
 
     var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
+            case .goalsLoaded(let goals):
+                state.goals = IdentifiedArray(uniqueElements: goals)
+                return .none
+
             case .editTapped:
+                state.areaEditor = AreaEditorFeature.State(mode: .edit(state.area))
+                return .none
+
+            case .areaEditor(.presented(.delegate(.areaUpdated(let area)))):
+                state.areaEditor = nil
+                state.area = area
+                return .send(.delegate(.areaUpdated(area)))
+
+            case .areaEditor:
                 return .none
 
             case .togglePauseTapped:
+                var updatedArea = state.area
+                updatedArea.status = state.area.status == .active ? .paused : .active
+
+                return .run { send in
+                    await send(.toggleResponse(
+                        TaskResult {
+                            try await areaRepository.update(updatedArea)
+                            return updatedArea
+                        }
+                    ))
+                }
+
+            case .toggleResponse(.success(let area)):
+                state.area = area
+                return .send(.delegate(.areaUpdated(area)))
+
+            case .toggleResponse(.failure):
                 return .none
 
             case .archiveTapped:
+                var updatedArea = state.area
+                updatedArea.status = .archived
+
+                return .run { send in
+                    await send(.archiveResponse(
+                        TaskResult {
+                            try await areaRepository.update(updatedArea)
+                            return updatedArea
+                        }
+                    ))
+                }
+
+            case .archiveResponse(.success(let area)):
+                state.area = area
+                return .run { send in
+                    await send(.delegate(.areaUpdated(area)))
+                    await dismiss()
+                }
+
+            case .archiveResponse(.failure):
                 return .none
 
             case .deleteTapped:
@@ -432,11 +625,36 @@ struct AreaDetailFeature {
                 }
                 return .none
 
+            case .deleteConfirmation(.presented(.confirmDelete)):
+                state.deleteConfirmation = nil
+                let areaId = state.area.id
+
+                return .run { send in
+                    await send(.deleteResponse(
+                        TaskResult { try await areaRepository.delete(id: areaId) }
+                    ))
+                }
+
             case .deleteConfirmation:
+                return .none
+
+            case .deleteResponse(.success):
+                return .run { [areaId = state.area.id] send in
+                    await send(.delegate(.areaDeleted(areaId)))
+                    await dismiss()
+                }
+
+            case .deleteResponse(.failure):
+                return .none
+
+            case .delegate:
                 return .none
             }
         }
         .ifLet(\.$deleteConfirmation, action: \.deleteConfirmation)
+        .ifLet(\.$areaEditor, action: \.areaEditor) {
+            AreaEditorFeature()
+        }
     }
 }
 
