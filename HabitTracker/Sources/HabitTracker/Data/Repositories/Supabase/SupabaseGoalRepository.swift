@@ -331,44 +331,6 @@ public actor SupabaseGoalRepository: GoalRepository {
         // Offline: Keep pending state
     }
 
-    public func complete(id: UUID) async throws {
-        guard let userId = await client.auth.currentUser?.id else {
-            throw SupabaseError.unauthorized
-        }
-
-        // Fetch goal from cache, update status, and save
-        guard let goal = try cacheService.fetchGoal(id: id) else {
-            throw SupabaseError.notFound
-        }
-
-        var completedGoal = goal
-        completedGoal.status = .completed
-        completedGoal.updatedAt = Date()
-
-        // Save to cache with pending state
-                    try cacheService.saveGoal(completedGoal, syncState: .pending)
-
-        // Try to sync to Supabase if online
-        if await networkMonitor.isConnected() {
-            do {
-                try await client
-                    .from("goals")
-                    .update(["status": "completed", "updated_at": Date().iso8601String])
-                    .eq("id", value: id.uuidString)
-                    .eq("user_id", value: userId.uuidString)
-                    .execute()
-
-                // Update cache with synced state
-                                    try cacheService.saveGoal(completedGoal, syncState: .synced)
-            } catch let error as PostgrestError {
-                throw SupabaseError.from(error)
-            } catch {
-                throw SupabaseError.from(error)
-            }
-        }
-        // Offline: Keep pending state
-    }
-
     public func searchByHashtag(_ hashtag: String) async throws -> [Goal] {
         do {
             guard let userId = await client.auth.currentUser?.id else {

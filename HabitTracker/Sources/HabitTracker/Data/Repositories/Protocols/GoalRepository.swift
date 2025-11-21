@@ -49,12 +49,6 @@ public protocol GoalRepository: Sendable {
     /// - Throws: SupabaseError if the operation fails
     func archive(id: UUID) async throws
 
-    /// Completes a goal (marks as done)
-    ///
-    /// - Parameter id: The UUID of the goal to complete
-    /// - Throws: SupabaseError if the operation fails
-    func complete(id: UUID) async throws
-
     /// Searches goals by hashtag
     ///
     /// - Parameter hashtag: The hashtag to search for (without #)

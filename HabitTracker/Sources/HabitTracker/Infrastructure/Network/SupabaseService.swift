@@ -15,25 +15,34 @@ public actor SupabaseService: Sendable {
     /// Shared singleton instance
     public static let shared = SupabaseService()
 
-    /// The underlying Supabase client
-    private let client: SupabaseClient
+    /// The underlying Supabase client (lazily initialized)
+    private var client: SupabaseClient?
 
     /// Private initializer to enforce singleton pattern
     private init() {
+        // Client will be initialized lazily on first access
+    }
+
+    /// Creates and returns a configured Supabase client
+    ///
+    /// - Returns: The configured SupabaseClient
+    /// - Throws: SupabaseError.configurationError if configuration is invalid
+    /// - Throws: SupabaseError.invalidURL if the URL cannot be parsed
+    private func createClient() throws -> SupabaseClient {
         // Validate configuration
         do {
             try Config.validate()
         } catch {
-            fatalError("Supabase configuration error: \(error.localizedDescription)")
+            throw SupabaseError.configurationError(error.localizedDescription)
         }
 
         // Parse URL
         guard let url = URL(string: Config.supabaseURL) else {
-            fatalError("Invalid Supabase URL: \(Config.supabaseURL)")
+            throw SupabaseError.invalidURL(Config.supabaseURL)
         }
 
         // Initialize client with configuration
-        self.client = SupabaseClient(
+        return SupabaseClient(
             supabaseURL: url,
             supabaseKey: Config.supabaseAnonKey,
             options: SupabaseClientOptions(
@@ -56,11 +65,19 @@ public actor SupabaseService: Sendable {
         )
     }
 
-    /// Returns the configured Supabase client
+    /// Returns the configured Supabase client, creating it if necessary
     ///
     /// - Returns: The SupabaseClient instance for making API calls
-    public func getClient() -> SupabaseClient {
-        client
+    /// - Throws: SupabaseError.configurationError if configuration is invalid
+    /// - Throws: SupabaseError.invalidURL if the URL cannot be parsed
+    public func getClient() throws -> SupabaseClient {
+        if let client = client {
+            return client
+        }
+
+        let newClient = try createClient()
+        self.client = newClient
+        return newClient
     }
 
     /// Tests the connection to Supabase by querying the profiles table
@@ -68,6 +85,8 @@ public actor SupabaseService: Sendable {
     /// - Returns: `true` if connection is successful, `false` otherwise
     /// - Throws: SupabaseError if connection fails
     public func testConnection() async throws -> Bool {
+        let client = try getClient()
+
         do {
             // Simple query to verify connection
             let _: [Profile] = try await client
@@ -88,15 +107,19 @@ public actor SupabaseService: Sendable {
     /// Returns the current authenticated user, if any
     ///
     /// - Returns: The current User or nil if not authenticated
-    public func currentUser() async -> User? {
-        await client.auth.currentUser
+    /// - Throws: SupabaseError if client configuration fails
+    public func currentUser() async throws -> User? {
+        let client = try getClient()
+        return await client.auth.currentUser
     }
 
     /// Returns the current session, if any
     ///
     /// - Returns: The current Session or nil if not authenticated
-    public func currentSession() async -> Session? {
-        await client.auth.currentSession
+    /// - Throws: SupabaseError if client configuration fails
+    public func currentSession() async throws -> Session? {
+        let client = try getClient()
+        return await client.auth.currentSession
     }
 }
 

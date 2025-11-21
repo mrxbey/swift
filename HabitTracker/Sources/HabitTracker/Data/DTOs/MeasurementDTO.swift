@@ -12,7 +12,6 @@ public struct MeasurementDTO: Codable, Sendable, Equatable {
     public let unit: String
     public let recordedAt: Date
     public let createdAt: Date
-    public let updatedAt: Date
 
     /// MARK: - CodingKeys
 
@@ -23,9 +22,8 @@ public struct MeasurementDTO: Codable, Sendable, Equatable {
         case occurrenceId = "occurrence_id"
         case value
         case unit
-        case recordedAt = "recorded_at"
+        case recordedAt = "occurred_at"
         case createdAt = "created_at"
-        case updatedAt = "updated_at"
     }
 
     /// MARK: - Initialization
@@ -52,7 +50,6 @@ public struct MeasurementDTO: Codable, Sendable, Equatable {
 
         self.recordedAt = measurement.recordedAt
         self.createdAt = measurement.createdAt
-        self.updatedAt = measurement.updatedAt
     }
 
     /// MARK: - Conversion
@@ -75,8 +72,7 @@ public struct MeasurementDTO: Codable, Sendable, Equatable {
             value: value,
             unit: swiftUnit,
             recordedAt: recordedAt,
-            createdAt: createdAt,
-            updatedAt: updatedAt
+            createdAt: createdAt
         )
     }
 }
@@ -89,30 +85,25 @@ public struct MeasurementDTO: Codable, Sendable, Equatable {
 /// Used for versioned targets (e.g., changing water intake goals over time).
 public struct GoalMeasureTargetDTO: Codable, Sendable, Equatable {
     public let id: UUID
-    public let userId: UUID
     public let goalId: UUID
     public let targetValue: Double
     public let unit: String
     public let effectiveFrom: Date
     public let effectiveTo: Date?
     public let createdAt: Date
-    public let updatedAt: Date
 
     enum CodingKeys: String, CodingKey {
         case id
-        case userId = "user_id"
         case goalId = "goal_id"
         case targetValue = "target_value"
         case unit
         case effectiveFrom = "effective_from"
         case effectiveTo = "effective_to"
         case createdAt = "created_at"
-        case updatedAt = "updated_at"
     }
 
     public init(from target: GoalMeasureTarget) {
         self.id = target.id
-        self.userId = target.userId
         self.goalId = target.goalId
         self.targetValue = target.targetValue
 
@@ -129,7 +120,6 @@ public struct GoalMeasureTargetDTO: Codable, Sendable, Equatable {
         self.effectiveFrom = target.effectiveFrom
         self.effectiveTo = target.effectiveTo
         self.createdAt = target.createdAt
-        self.updatedAt = target.updatedAt
     }
 
     public var toDomain: GoalMeasureTarget {
@@ -143,14 +133,12 @@ public struct GoalMeasureTargetDTO: Codable, Sendable, Equatable {
 
         return GoalMeasureTarget(
             id: id,
-            userId: userId,
             goalId: goalId,
             targetValue: targetValue,
             unit: swiftUnit,
             effectiveFrom: effectiveFrom,
             effectiveTo: effectiveTo,
-            createdAt: createdAt,
-            updatedAt: updatedAt
+            createdAt: createdAt
         )
     }
 }

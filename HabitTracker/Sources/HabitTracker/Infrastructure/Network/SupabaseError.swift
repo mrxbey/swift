@@ -6,6 +6,12 @@ import Supabase
 /// Maps low-level Supabase errors to user-friendly messages and provides
 /// specific error cases for common scenarios.
 public enum SupabaseError: LocalizedError, Equatable, Sendable {
+    /// Configuration error (missing or invalid environment variables)
+    case configurationError(String)
+
+    /// Invalid Supabase URL
+    case invalidURL(String)
+
     /// User is not authenticated
     case unauthorized
 
@@ -49,6 +55,12 @@ public enum SupabaseError: LocalizedError, Equatable, Sendable {
 
     public var errorDescription: String? {
         switch self {
+        case .configurationError(let message):
+            return "Configuration error: \(message)"
+
+        case .invalidURL(let url):
+            return "Invalid Supabase URL: \(url)"
+
         case .unauthorized:
             return "Please sign in to continue"
 
@@ -92,6 +104,12 @@ public enum SupabaseError: LocalizedError, Equatable, Sendable {
 
     public var recoverySuggestion: String? {
         switch self {
+        case .configurationError:
+            return "Check that SUPABASE_URL and SUPABASE_ANON_KEY environment variables are set correctly"
+
+        case .invalidURL:
+            return "Verify the SUPABASE_URL environment variable contains a valid URL"
+
         case .unauthorized:
             return "Try signing out and signing back in"
 
@@ -287,7 +305,9 @@ public enum SupabaseError: LocalizedError, Equatable, Sendable {
              (.timeout, .timeout):
             return true
 
-        case (.networkError(let lMsg), .networkError(let rMsg)),
+        case (.configurationError(let lMsg), .configurationError(let rMsg)),
+             (.invalidURL(let lMsg), .invalidURL(let rMsg)),
+             (.networkError(let lMsg), .networkError(let rMsg)),
              (.decodingError(let lMsg), .decodingError(let rMsg)),
              (.duplicateEntry(let lMsg), .duplicateEntry(let rMsg)),
              (.invalidReference(let lMsg), .invalidReference(let rMsg)),

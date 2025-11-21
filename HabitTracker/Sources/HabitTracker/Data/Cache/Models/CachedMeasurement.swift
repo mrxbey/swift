@@ -12,7 +12,6 @@ public final class CachedMeasurement {
     public var unit: String
     public var recordedAt: Date
     public var createdAt: Date
-    public var updatedAt: Date
 
     // Sync metadata
     public var lastSyncedAt: Date?
@@ -30,7 +29,6 @@ public final class CachedMeasurement {
         unit: String,
         recordedAt: Date,
         createdAt: Date,
-        updatedAt: Date,
         lastSyncedAt: Date? = nil,
         syncState: String = "synced",
         pendingOperation: String? = nil
@@ -43,7 +41,6 @@ public final class CachedMeasurement {
         self.unit = unit
         self.recordedAt = recordedAt
         self.createdAt = createdAt
-        self.updatedAt = updatedAt
         self.lastSyncedAt = lastSyncedAt
         self.syncState = syncState
         self.pendingOperation = pendingOperation
@@ -61,7 +58,6 @@ public final class CachedMeasurement {
             unit: measurement.unit.rawValue,
             recordedAt: measurement.recordedAt,
             createdAt: measurement.createdAt,
-            updatedAt: measurement.updatedAt,
             lastSyncedAt: syncState == .synced ? Date() : nil,
             syncState: syncState.rawValue,
             pendingOperation: nil
@@ -77,8 +73,7 @@ public final class CachedMeasurement {
             value: value,
             unit: UnitKind(rawValue: unit) ?? .count,
             recordedAt: recordedAt,
-            createdAt: createdAt,
-            updatedAt: updatedAt
+            createdAt: createdAt
         )
     }
 
@@ -88,7 +83,6 @@ public final class CachedMeasurement {
         self.value = measurement.value
         self.unit = measurement.unit.rawValue
         self.recordedAt = measurement.recordedAt
-        self.updatedAt = measurement.updatedAt
         self.syncState = syncState.rawValue
         if syncState == .synced {
             self.lastSyncedAt = Date()

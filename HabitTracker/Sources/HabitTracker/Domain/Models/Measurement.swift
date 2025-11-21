@@ -14,7 +14,6 @@ public final class Measurement: Identifiable, Codable, Sendable, Equatable, Hash
     public var unit: UnitKind
     public var recordedAt: Date
     public let createdAt: Date
-    public var updatedAt: Date
 
     /// MARK: - Initialization
 
@@ -26,8 +25,7 @@ public final class Measurement: Identifiable, Codable, Sendable, Equatable, Hash
         value: Double,
         unit: UnitKind,
         recordedAt: Date = Date(),
-        createdAt: Date = Date(),
-        updatedAt: Date = Date()
+        createdAt: Date = Date()
     ) {
         self.id = id
         self.userId = userId
@@ -37,7 +35,6 @@ public final class Measurement: Identifiable, Codable, Sendable, Equatable, Hash
         self.unit = unit
         self.recordedAt = recordedAt
         self.createdAt = createdAt
-        self.updatedAt = updatedAt
     }
 
     /// MARK: - Equatable
@@ -103,37 +100,31 @@ public enum UnitKind: String, Codable, Sendable, CaseIterable {
 @Observable
 public final class GoalMeasureTarget: Identifiable, Codable, Sendable, Equatable, Hashable {
     public let id: UUID
-    public let userId: UUID
     public let goalId: UUID
     public var targetValue: Double
     public var unit: UnitKind
     public var effectiveFrom: Date
     public var effectiveTo: Date?
     public let createdAt: Date
-    public var updatedAt: Date
 
     /// MARK: - Initialization
 
     public init(
         id: UUID = UUID(),
-        userId: UUID,
         goalId: UUID,
         targetValue: Double,
         unit: UnitKind,
         effectiveFrom: Date = Date(),
         effectiveTo: Date? = nil,
-        createdAt: Date = Date(),
-        updatedAt: Date = Date()
+        createdAt: Date = Date()
     ) {
         self.id = id
-        self.userId = userId
         self.goalId = goalId
         self.targetValue = targetValue
         self.unit = unit
         self.effectiveFrom = effectiveFrom
         self.effectiveTo = effectiveTo
         self.createdAt = createdAt
-        self.updatedAt = updatedAt
     }
 
     /// MARK: - Computed Properties

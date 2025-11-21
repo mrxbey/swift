@@ -12,7 +12,7 @@
 -- with these unit types.
 --
 -- Original enum: ('ml', 'l', 'oz', 'count', 'min')
--- Required enum: ('ml', 'l', 'oz', 'count', 'min', 'kg', 'lb', 'minutes', 'hours')
+-- Required enum: ('ml', 'l', 'oz', 'count', 'min', 'kg', 'lb', 'hours')
 
 -- ============================================================================
 -- ENUM MODIFICATIONS
@@ -22,9 +22,10 @@
 ALTER TYPE unit_kind ADD VALUE IF NOT EXISTS 'kg';
 ALTER TYPE unit_kind ADD VALUE IF NOT EXISTS 'lb';
 
--- Add time units for activity duration tracking
--- Note: 'min' already exists in database, maps to 'minutes' in Swift via DTO conversion
-ALTER TYPE unit_kind ADD VALUE IF NOT EXISTS 'minutes';
+-- Add time unit for activity duration tracking
+-- Note: 'min' already exists in database and is the canonical value for minutes.
+--       Swift .minutes enum case maps to database 'min' via DTO conversion.
+--       DO NOT add 'minutes' as it would create ambiguity with 'min'.
 ALTER TYPE unit_kind ADD VALUE IF NOT EXISTS 'hours';
 
 -- ============================================================================
@@ -41,7 +42,6 @@ ALTER TYPE unit_kind ADD VALUE IF NOT EXISTS 'hours';
 -- min
 -- kg
 -- lb
--- minutes
 -- hours
 
 -- ============================================================================
