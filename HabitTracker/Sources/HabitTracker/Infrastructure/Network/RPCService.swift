@@ -308,18 +308,16 @@ public actor RPCService {
         }
 
         struct StatsRow: Codable {
-            let goal: GoalDTO
+            let goalId: UUID
+            let goalTitle: String
+            let goalEmoji: String?
             let completionCount: Int
-            let targetCount: Int
-            let completionRate: Double
-            let totalPoints: Int
 
             enum CodingKeys: String, CodingKey {
-                case goal
+                case goalId = "goal_id"
+                case goalTitle = "goal_title"
+                case goalEmoji = "goal_emoji"
                 case completionCount = "completion_count"
-                case targetCount = "target_count"
-                case completionRate = "completion_rate"
-                case totalPoints = "total_points"
             }
         }
 
@@ -334,11 +332,10 @@ public actor RPCService {
 
         return response.map { row in
             GoalWithStats(
-                goal: row.goal.toDomain,
-                completionCount: row.completionCount,
-                targetCount: row.targetCount,
-                completionRate: row.completionRate,
-                totalPoints: row.totalPoints
+                goalId: row.goalId,
+                title: row.goalTitle,
+                emoji: row.goalEmoji,
+                completionCount: row.completionCount
             )
         }
     }
@@ -356,18 +353,16 @@ public actor RPCService {
         }
 
         struct StatsRow: Codable {
-            let activeGoalsCount: Int
-            let completedGoalsCount: Int
-            let totalPoints: Int
+            let totalGoals: Int
+            let activeGoals: Int
+            let totalCompletions: Int
             let completionRate: Double
-            let currentStreak: Int
 
             enum CodingKeys: String, CodingKey {
-                case activeGoalsCount = "active_goals_count"
-                case completedGoalsCount = "completed_goals_count"
-                case totalPoints = "total_points"
+                case totalGoals = "total_goals"
+                case activeGoals = "active_goals"
+                case totalCompletions = "total_completions"
                 case completionRate = "completion_rate"
-                case currentStreak = "current_streak"
             }
         }
 
@@ -382,11 +377,10 @@ public actor RPCService {
 
         return AreaStatistics(
             areaId: areaId,
-            activeGoalsCount: response.activeGoalsCount,
-            completedGoalsCount: response.completedGoalsCount,
-            totalPoints: response.totalPoints,
-            completionRate: response.completionRate,
-            currentStreak: response.currentStreak
+            totalGoals: response.totalGoals,
+            activeGoals: response.activeGoals,
+            totalCompletions: response.totalCompletions,
+            completionRate: response.completionRate
         )
     }
 

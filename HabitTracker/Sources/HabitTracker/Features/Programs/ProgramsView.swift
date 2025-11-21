@@ -126,7 +126,7 @@ struct CategoryPill: View {
 }
 
 struct ProgramCard: View {
-    let program: Program
+    let program: ProgramViewModel
     let action: () -> Void
 
     var body: some View {
@@ -270,7 +270,7 @@ struct ProgramDetailView: View {
 }
 
 struct ProgramItemRow: View {
-    let item: ProgramItem
+    let item: ProgramItemViewModel
     let isSelected: Bool
     let action: () -> Void
 
@@ -306,7 +306,7 @@ struct ProgramItemRow: View {
 struct ProgramsFeature {
     @ObservableState
     struct State: Equatable {
-        var programs: IdentifiedArrayOf<Program> = []
+        var programs: IdentifiedArrayOf<ProgramViewModel> = []
         var categories: [String] = []
         var selectedCategory: String?
         var searchText: String = ""
@@ -314,7 +314,7 @@ struct ProgramsFeature {
 
         @Presents var programDetail: ProgramDetailFeature.State?
 
-        var filteredPrograms: IdentifiedArrayOf<Program> {
+        var filteredPrograms: IdentifiedArrayOf<ProgramViewModel> {
             var filtered = programs
 
             // Filter by category
@@ -341,7 +341,7 @@ struct ProgramsFeature {
     enum Action: Sendable, BindableAction {
         case binding(BindingAction<State>)
         case task
-        case programsResponse(TaskResult<[Program]>)
+        case programsResponse(TaskResult<[ProgramViewModel]>)
         case categorySelected(String?)
         case programTapped(UUID)
         case programDetail(PresentationAction<ProgramDetailFeature.Action>)
@@ -392,11 +392,11 @@ struct ProgramsFeature {
 struct ProgramDetailFeature {
     @ObservableState
     struct State: Equatable {
-        var program: Program
-        var items: IdentifiedArrayOf<ProgramItem> = []
+        var program: ProgramViewModel
+        var items: IdentifiedArrayOf<ProgramItemViewModel> = []
         var selectedItems: Set<UUID> = []
 
-        init(program: Program, items: [ProgramItem]) {
+        init(program: ProgramViewModel, items: [ProgramItemViewModel]) {
             self.program = program
             self.items = IdentifiedArray(uniqueElements: items)
             self.selectedItems = Set(items.map { $0.id })
@@ -431,9 +431,10 @@ struct ProgramDetailFeature {
     }
 }
 
-/// MARK: - Models
+/// MARK: - View Models
 
-struct Program: Identifiable, Equatable {
+/// View-specific model for Program display in TCA
+struct ProgramViewModel: Identifiable, Equatable {
     let id: UUID
     let title: String
     let summary: String?
@@ -464,7 +465,8 @@ struct Program: Identifiable, Equatable {
     }
 }
 
-struct ProgramItem: Identifiable, Equatable {
+/// View-specific model for ProgramItem display in TCA
+struct ProgramItemViewModel: Identifiable, Equatable {
     let id: UUID
     let title: String
     let emoji: String?
@@ -490,14 +492,14 @@ struct ProgramItem: Identifiable, Equatable {
     ProgramsView(
         store: Store(initialState: ProgramsFeature.State(
             programs: [
-                Program(
+                ProgramViewModel(
                     title: "30-Day Meditation",
                     summary: "Build a consistent meditation practice",
                     category: "Mindfulness",
                     rating: 4.8,
                     addedCount: 1234
                 ),
-                Program(
+                ProgramViewModel(
                     title: "Hydration Hero",
                     summary: "Drink 8 glasses of water daily",
                     category: "Health",

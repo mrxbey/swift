@@ -5,31 +5,25 @@ import Foundation
 /// Provides operations for browsing, adopting, and managing habit programs.
 /// Programs are pre-defined collections of goals that users can adopt.
 public protocol ProgramRepository: Sendable {
-    /// Fetches all published programs
+    /// Fetches all public programs
     ///
     /// - Returns: Array of programs sorted by popularity or relevance
     /// - Throws: SupabaseError if the operation fails
     func fetchAll() async throws -> [Program]
 
-    /// Fetches official programs only
+    /// Fetches programs by visibility level
     ///
-    /// - Returns: Array of official programs
+    /// - Parameter visibility: The visibility level to filter by
+    /// - Returns: Array of programs with that visibility
     /// - Throws: SupabaseError if the operation fails
-    func fetchOfficialPrograms() async throws -> [Program]
+    func fetchPrograms(by visibility: ProgramVisibility) async throws -> [Program]
 
     /// Fetches programs by category
     ///
-    /// - Parameter category: The category to filter by
+    /// - Parameter category: The category to filter by (string value)
     /// - Returns: Array of programs in that category
     /// - Throws: SupabaseError if the operation fails
-    func fetchPrograms(by category: ProgramCategory) async throws -> [Program]
-
-    /// Fetches programs by difficulty level
-    ///
-    /// - Parameter difficulty: The difficulty level to filter by
-    /// - Returns: Array of programs at that difficulty level
-    /// - Throws: SupabaseError if the operation fails
-    func fetchPrograms(byDifficulty difficulty: ProgramDifficulty) async throws -> [Program]
+    func fetchPrograms(by category: String) async throws -> [Program]
 
     /// Fetches programs by tag
     ///
@@ -45,10 +39,17 @@ public protocol ProgramRepository: Sendable {
     /// - Throws: SupabaseError.notFound if program doesn't exist
     func fetch(_ id: UUID) async throws -> Program
 
+    /// Fetches a specific program by slug
+    ///
+    /// - Parameter slug: The slug of the program to fetch
+    /// - Returns: The program if found
+    /// - Throws: SupabaseError.notFound if program doesn't exist
+    func fetch(slug: String) async throws -> Program
+
     /// Fetches goals associated with a program
     ///
     /// - Parameter programId: The UUID of the program
-    /// - Returns: Array of program goals
+    /// - Returns: Array of program goals (templates)
     /// - Throws: SupabaseError if the operation fails
     func fetchGoals(for programId: UUID) async throws -> [ProgramGoal]
 
@@ -64,7 +65,7 @@ public protocol ProgramRepository: Sendable {
     /// - Throws: SupabaseError if the operation fails
     func adoptProgram(programId: UUID, areaId: UUID) async throws -> [Goal]
 
-    /// Searches programs by title or description
+    /// Searches programs by title or summary
     ///
     /// - Parameter query: The search query
     /// - Returns: Array of programs matching the query

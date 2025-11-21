@@ -225,7 +225,7 @@ public actor RealtimeService {
                 break
             }
         } catch {
-            print("Error decoding occurrence event: \(error)")
+            Logger.realtime.error("Failed to decode occurrence event", error: error)
         }
     }
 
@@ -262,7 +262,7 @@ public actor RealtimeService {
                 break
             }
         } catch {
-            print("Error decoding goal event: \(error)")
+            Logger.realtime.error("Failed to decode goal event", error: error)
         }
     }
 
@@ -299,7 +299,7 @@ public actor RealtimeService {
                 break
             }
         } catch {
-            print("Error decoding area event: \(error)")
+            Logger.realtime.error("Failed to decode area event", error: error)
         }
     }
 }

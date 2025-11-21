@@ -115,7 +115,7 @@ public actor SyncEngine {
             } catch {
                 // Update cache with failed state (let CacheService handle ModelContext)
                 try? cacheService.saveArea(area, syncState: .failed)
-                print("Failed to sync area \(cached.id): \(error)")
+                Logger.sync.error("Failed to sync area \(cached.id)", error: error)
             }
         }
     }
@@ -139,7 +139,7 @@ public actor SyncEngine {
             } catch {
                 // Update cache with failed state (let CacheService handle ModelContext)
                 try? cacheService.saveGoal(goal, syncState: .failed)
-                print("Failed to sync goal \(cached.id): \(error)")
+                Logger.sync.error("Failed to sync goal \(cached.id)", error: error)
             }
         }
     }
@@ -163,7 +163,7 @@ public actor SyncEngine {
             } catch {
                 // Update cache with failed state (let CacheService handle ModelContext)
                 try? cacheService.saveOccurrence(occurrence, syncState: .failed)
-                print("Failed to sync occurrence \(cached.id): \(error)")
+                Logger.sync.error("Failed to sync occurrence \(cached.id)", error: error)
             }
         }
     }
@@ -187,7 +187,7 @@ public actor SyncEngine {
             } catch {
                 // Update cache with failed state (let CacheService handle ModelContext)
                 try? cacheService.saveMeasurement(measurement, syncState: .failed)
-                print("Failed to sync measurement \(cached.id): \(error)")
+                Logger.sync.error("Failed to sync measurement \(cached.id)", error: error)
             }
         }
     }

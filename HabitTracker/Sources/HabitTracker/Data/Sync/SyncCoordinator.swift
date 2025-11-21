@@ -86,7 +86,7 @@ public final class SyncCoordinator: ObservableObject {
             syncError = nil
         } catch {
             syncError = "Sync failed: \(error.localizedDescription)"
-            print("Sync error: \(error)")
+            Logger.sync.error("Sync failed", error: error)
         }
 
         isSyncing = false

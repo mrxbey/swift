@@ -34,8 +34,8 @@ public actor SupabaseProgramRepository: ProgramRepository {
             let response: [ProgramDTO] = try await client
                 .from("programs")
                 .select()
-                .eq("is_published", value: true)
-                .order("created_at", ascending: false)
+                .eq("visibility", value: "public")
+                .order("added_count", ascending: false)
                 .execute()
                 .value
 
@@ -47,14 +47,13 @@ public actor SupabaseProgramRepository: ProgramRepository {
         }
     }
 
-    public func fetchOfficialPrograms() async throws -> [Program] {
+    public func fetchPrograms(by visibility: ProgramVisibility) async throws -> [Program] {
         do {
             let response: [ProgramDTO] = try await client
                 .from("programs")
                 .select()
-                .eq("is_published", value: true)
-                .eq("is_official", value: true)
-                .order("created_at", ascending: false)
+                .eq("visibility", value: visibility.rawValue)
+                .order("added_count", ascending: false)
                 .execute()
                 .value
 
@@ -66,33 +65,14 @@ public actor SupabaseProgramRepository: ProgramRepository {
         }
     }
 
-    public func fetchPrograms(by category: ProgramCategory) async throws -> [Program] {
+    public func fetchPrograms(by category: String) async throws -> [Program] {
         do {
             let response: [ProgramDTO] = try await client
                 .from("programs")
                 .select()
-                .eq("is_published", value: true)
-                .eq("category", value: category.rawValue)
-                .order("created_at", ascending: false)
-                .execute()
-                .value
-
-            return response.map(\.toDomain)
-        } catch let error as PostgrestError {
-            throw SupabaseError.from(error)
-        } catch {
-            throw SupabaseError.from(error)
-        }
-    }
-
-    public func fetchPrograms(byDifficulty difficulty: ProgramDifficulty) async throws -> [Program] {
-        do {
-            let response: [ProgramDTO] = try await client
-                .from("programs")
-                .select()
-                .eq("is_published", value: true)
-                .eq("difficulty", value: difficulty.rawValue)
-                .order("created_at", ascending: false)
+                .eq("visibility", value: "public")
+                .eq("category", value: category)
+                .order("added_count", ascending: false)
                 .execute()
                 .value
 
@@ -109,9 +89,9 @@ public actor SupabaseProgramRepository: ProgramRepository {
             let response: [ProgramDTO] = try await client
                 .from("programs")
                 .select()
-                .eq("is_published", value: true)
+                .eq("visibility", value: "public")
                 .contains("tags", value: [tag])
-                .order("created_at", ascending: false)
+                .order("added_count", ascending: false)
                 .execute()
                 .value
 
@@ -129,7 +109,29 @@ public actor SupabaseProgramRepository: ProgramRepository {
                 .from("programs")
                 .select()
                 .eq("id", value: id.uuidString)
-                .eq("is_published", value: true)
+                .eq("visibility", value: "public")
+                .single()
+                .execute()
+                .value
+
+            return response.toDomain
+        } catch let error as PostgrestError {
+            if case .notFound = error {
+                throw SupabaseError.notFound
+            }
+            throw SupabaseError.from(error)
+        } catch {
+            throw SupabaseError.from(error)
+        }
+    }
+
+    public func fetch(slug: String) async throws -> Program {
+        do {
+            let response: ProgramDTO = try await client
+                .from("programs")
+                .select()
+                .eq("slug", value: slug)
+                .eq("visibility", value: "public")
                 .single()
                 .execute()
                 .value
@@ -148,7 +150,7 @@ public actor SupabaseProgramRepository: ProgramRepository {
     public func fetchGoals(for programId: UUID) async throws -> [ProgramGoal] {
         do {
             let response: [ProgramGoalDTO] = try await client
-                .from("program_goals")
+                .from("program_items")
                 .select()
                 .eq("program_id", value: programId.uuidString)
                 .order("order_index", ascending: true)
@@ -168,7 +170,7 @@ public actor SupabaseProgramRepository: ProgramRepository {
             throw SupabaseError.unauthorized
         }
 
-        // Fetch the program to verify it exists and is published
+        // Fetch the program to verify it exists and is public
         let program = try await fetch(programId)
 
         // Fetch the program's goal templates
@@ -202,9 +204,9 @@ public actor SupabaseProgramRepository: ProgramRepository {
                 kind: goalKind,
                 status: .active,
                 keepUntilComplete: false,
-                timesPerDay: programGoal.timesPerDay,
-                pointsPerCompletion: 10, // Default points
-                linkedExerciseKey: nil,
+                timesPerDay: nil,
+                pointsPerCompletion: programGoal.defaultPoints,
+                linkedExerciseKey: programGoal.linkedExerciseKey,
                 hashtags: [],
                 createdAt: Date(),
                 updatedAt: Date()
@@ -225,10 +227,8 @@ public actor SupabaseProgramRepository: ProgramRepository {
                 createdGoals.append(response.toDomain)
             } catch let error as PostgrestError {
                 // Log error but continue with other goals
-                print("⚠️ Failed to create goal '\(goal.title)' from program: \(error.localizedDescription)")
                 throw SupabaseError.from(error)
             } catch {
-                print("⚠️ Failed to create goal '\(goal.title)' from program: \(error.localizedDescription)")
                 throw SupabaseError.from(error)
             }
         }
@@ -238,13 +238,13 @@ public actor SupabaseProgramRepository: ProgramRepository {
 
     public func search(query: String) async throws -> [Program] {
         do {
-            // Search in title and description using textSearch
+            // Search in title and summary using textSearch
             let response: [ProgramDTO] = try await client
                 .from("programs")
                 .select()
-                .eq("is_published", value: true)
-                .or("title.ilike.%\(query)%,description.ilike.%\(query)%")
-                .order("created_at", ascending: false)
+                .eq("visibility", value: "public")
+                .or("title.ilike.%\(query)%,summary.ilike.%\(query)%")
+                .order("added_count", ascending: false)
                 .execute()
                 .value
 
@@ -292,24 +292,7 @@ public actor SupabaseProgramRepository: ProgramRepository {
         // This might involve checking if they're the author or an admin
 
         do {
-            var dto = ProgramDTO(from: program)
-            // Manually set updated_at to current time
-            dto = ProgramDTO(
-                id: dto.id,
-                title: dto.title,
-                description: dto.description,
-                emoji: dto.emoji,
-                imageURL: dto.imageURL,
-                category: dto.category,
-                difficulty: dto.difficulty,
-                durationDays: dto.durationDays,
-                tags: dto.tags,
-                authorName: dto.authorName,
-                isOfficial: dto.isOfficial,
-                isPublished: dto.isPublished,
-                createdAt: dto.createdAt,
-                updatedAt: Date()
-            )
+            let dto = ProgramDTO(from: program)
 
             let _: ProgramDTO = try await client
                 .from("programs")
@@ -346,44 +329,5 @@ public actor SupabaseProgramRepository: ProgramRepository {
         } catch {
             throw SupabaseError.from(error)
         }
-    }
-}
-
-// MARK: - Extension for DTO Updates
-
-extension ProgramDTO {
-    /// Creates a new ProgramDTO with all fields
-    ///
-    /// Used for updates where we need to manually set updated_at
-    init(
-        id: UUID,
-        title: String,
-        description: String,
-        emoji: String?,
-        imageURL: String?,
-        category: String,
-        difficulty: String,
-        durationDays: Int?,
-        tags: [String],
-        authorName: String?,
-        isOfficial: Bool,
-        isPublished: Bool,
-        createdAt: Date,
-        updatedAt: Date
-    ) {
-        self.id = id
-        self.title = title
-        self.description = description
-        self.emoji = emoji
-        self.imageURL = imageURL
-        self.category = category
-        self.difficulty = difficulty
-        self.durationDays = durationDays
-        self.tags = tags
-        self.authorName = authorName
-        self.isOfficial = isOfficial
-        self.isPublished = isPublished
-        self.createdAt = createdAt
-        self.updatedAt = updatedAt
     }
 }

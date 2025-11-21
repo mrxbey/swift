@@ -61,7 +61,7 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
                     try await syncEngine.performFullSync(userId: userId)
                 } catch {
                     // Log sync error but continue with cached data
-                    print("⚠️ [SupabaseOccurrenceRepository] Sync failed in fetchOccurrences: \(error.localizedDescription)")
+                    Logger.repository.warning("Sync failed in fetchOccurrences, using cached data", error: error)
                 }
                 // Return fresh data from cache after sync (or cached data if sync failed)
                 return try cacheService.fetchOccurrences(userId: userId, date: date)
@@ -147,7 +147,7 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
                     do {
                         try await syncEngine.performFullSync(userId: userId)
                     } catch {
-                        print("⚠️ [SupabaseOccurrenceRepository] Background sync failed in fetch: \(error.localizedDescription)")
+                        Logger.repository.warning("Background sync failed in fetch", error: error)
                     }
                 }
             }
@@ -295,7 +295,7 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
                 let updated = try await fetchOccurrenceFromSupabase(id, userId: userId)
                 try cacheService.saveOccurrence(updated, syncState: .synced)
             } catch {
-                print("⚠️ [SupabaseOccurrenceRepository] Failed to refresh cache after RPC: \(error.localizedDescription)")
+                Logger.repository.warning("Failed to refresh cache after completeTick RPC", error: error)
                 // Cache will be updated on next sync
             }
         } catch let error as PostgrestError {
@@ -330,7 +330,7 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
                 let updated = try await fetchOccurrenceFromSupabase(id, userId: userId)
                 try cacheService.saveOccurrence(updated, syncState: .synced)
             } catch {
-                print("⚠️ [SupabaseOccurrenceRepository] Failed to refresh cache after RPC: \(error.localizedDescription)")
+                Logger.repository.warning("Failed to refresh cache after skip RPC", error: error)
                 // Cache will be updated on next sync
             }
         } catch let error as PostgrestError {
@@ -360,7 +360,7 @@ public actor SupabaseOccurrenceRepository: OccurrenceRepository {
                 let updated = try await fetchOccurrenceFromSupabase(id, userId: userId)
                 try cacheService.saveOccurrence(updated, syncState: .synced)
             } catch {
-                print("⚠️ [SupabaseOccurrenceRepository] Failed to refresh cache after RPC: \(error.localizedDescription)")
+                Logger.repository.warning("Failed to refresh cache after rename RPC", error: error)
                 // Cache will be updated on next sync
             }
         } catch let error as PostgrestError {

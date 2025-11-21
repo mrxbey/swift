@@ -69,24 +69,24 @@ public protocol GoalRepository: Sendable {
 /// MARK: - GoalWithStats
 
 /// A goal with completion statistics
+///
+/// Matches the return type of the get_most_completed_goals RPC function.
+/// Contains basic goal info plus completion count for insights/leaderboard display.
 public struct GoalWithStats: Codable, Sendable, Equatable {
-    public let goal: Goal
+    public let goalId: UUID
+    public let title: String
+    public let emoji: String?
     public let completionCount: Int
-    public let targetCount: Int
-    public let completionRate: Double
-    public let totalPoints: Int
 
     public init(
-        goal: Goal,
-        completionCount: Int,
-        targetCount: Int,
-        completionRate: Double,
-        totalPoints: Int
+        goalId: UUID,
+        title: String,
+        emoji: String?,
+        completionCount: Int
     ) {
-        self.goal = goal
+        self.goalId = goalId
+        self.title = title
+        self.emoji = emoji
         self.completionCount = completionCount
-        self.targetCount = targetCount
-        self.completionRate = completionRate
-        self.totalPoints = totalPoints
     }
 }

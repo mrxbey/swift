@@ -54,27 +54,26 @@ public protocol AreaRepository: Sendable {
 /// MARK: - AreaStatistics
 
 /// Statistics for an area
+///
+/// Matches the return type of the get_area_statistics RPC function.
 public struct AreaStatistics: Codable, Sendable, Equatable {
     public let areaId: UUID
-    public let activeGoalsCount: Int
-    public let completedGoalsCount: Int
-    public let totalPoints: Int
+    public let totalGoals: Int
+    public let activeGoals: Int
+    public let totalCompletions: Int
     public let completionRate: Double
-    public let currentStreak: Int
 
     public init(
         areaId: UUID,
-        activeGoalsCount: Int,
-        completedGoalsCount: Int,
-        totalPoints: Int,
-        completionRate: Double,
-        currentStreak: Int
+        totalGoals: Int,
+        activeGoals: Int,
+        totalCompletions: Int,
+        completionRate: Double
     ) {
         self.areaId = areaId
-        self.activeGoalsCount = activeGoalsCount
-        self.completedGoalsCount = completedGoalsCount
-        self.totalPoints = totalPoints
+        self.totalGoals = totalGoals
+        self.activeGoals = activeGoals
+        self.totalCompletions = totalCompletions
         self.completionRate = completionRate
-        self.currentStreak = currentStreak
     }
 }
